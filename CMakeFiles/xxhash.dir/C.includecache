@@ -1,0 +1,22 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/Users/user/Desktop/paper-version-1/xxhash/xxhash.c
+xxhash.h
+/Users/user/Desktop/paper-version-1/xxhash/xxhash.h
+stdlib.h
+-
+string.h
+-
+stdint.h
+-
+
+/Users/user/Desktop/paper-version-1/xxhash/xxhash.h
+stddef.h
+-
+

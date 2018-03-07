@@ -1,0 +1,26 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/Users/user/Desktop/paper-version-1/miniupnp/miniupnpc/minixml.c
+string.h
+-
+minixml.h
+/Users/user/Desktop/paper-version-1/miniupnp/miniupnpc/minixml.h
+
+/Users/user/Desktop/paper-version-1/miniupnp/miniupnpc/minixml.h
+
+/Users/user/Desktop/paper-version-1/miniupnp/miniupnpc/minixmlvalid.c
+stdlib.h
+-
+stdio.h
+-
+string.h
+-
+minixml.h
+/Users/user/Desktop/paper-version-1/miniupnp/miniupnpc/minixml.h
+

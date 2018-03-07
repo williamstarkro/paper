@@ -1,0 +1,38 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/Users/user/Desktop/paper-version-1/miniupnp/miniupnpc/igd_desc_parse.c
+igd_desc_parse.h
+/Users/user/Desktop/paper-version-1/miniupnp/miniupnpc/igd_desc_parse.h
+stdio.h
+-
+string.h
+-
+
+/Users/user/Desktop/paper-version-1/miniupnp/miniupnpc/igd_desc_parse.h
+
+/Users/user/Desktop/paper-version-1/miniupnp/miniupnpc/minixml.c
+string.h
+-
+minixml.h
+/Users/user/Desktop/paper-version-1/miniupnp/miniupnpc/minixml.h
+
+/Users/user/Desktop/paper-version-1/miniupnp/miniupnpc/minixml.h
+
+/Users/user/Desktop/paper-version-1/miniupnp/miniupnpc/testminixml.c
+stdlib.h
+-
+stdio.h
+-
+string.h
+-
+minixml.h
+/Users/user/Desktop/paper-version-1/miniupnp/miniupnpc/minixml.h
+igd_desc_parse.h
+/Users/user/Desktop/paper-version-1/miniupnp/miniupnpc/igd_desc_parse.h
+

@@ -1,0 +1,40 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/Users/user/Desktop/paper-version-1/miniupnp/miniupnpc/minixml.c
+string.h
+-
+minixml.h
+/Users/user/Desktop/paper-version-1/miniupnp/miniupnpc/minixml.h
+
+/Users/user/Desktop/paper-version-1/miniupnp/miniupnpc/minixml.h
+
+/Users/user/Desktop/paper-version-1/miniupnp/miniupnpc/testupnpreplyparse.c
+stdio.h
+-
+string.h
+-
+stdlib.h
+-
+upnpreplyparse.h
+/Users/user/Desktop/paper-version-1/miniupnp/miniupnpc/upnpreplyparse.h
+
+/Users/user/Desktop/paper-version-1/miniupnp/miniupnpc/upnpreplyparse.c
+stdlib.h
+-
+string.h
+-
+stdio.h
+-
+upnpreplyparse.h
+/Users/user/Desktop/paper-version-1/miniupnp/miniupnpc/upnpreplyparse.h
+minixml.h
+/Users/user/Desktop/paper-version-1/miniupnp/miniupnpc/minixml.h
+
+/Users/user/Desktop/paper-version-1/miniupnp/miniupnpc/upnpreplyparse.h
+

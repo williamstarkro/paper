@@ -1,0 +1,2 @@
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc libsecure.a  CMakeFiles/secure.dir/paper/plat/osx/working.mm.o CMakeFiles/secure.dir/bootstrap_weights.cpp.o CMakeFiles/secure.dir/paper/common.cpp.o CMakeFiles/secure.dir/paper/blockstore.cpp.o CMakeFiles/secure.dir/paper/ledger.cpp.o CMakeFiles/secure.dir/paper/node/utility.cpp.o CMakeFiles/secure.dir/paper/versioning.cpp.o
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib libsecure.a

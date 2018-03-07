@@ -1929,7 +1929,7 @@ void paper::rpc_handler::mpaper_from_raw ()
 	paper::uint128_union amount;
 	if (!amount.decode_dec (amount_text))
 	{
-		auto result (amount.number () / paper::Mxrb_ratio);
+		auto result (amount.number () / paper::Mppr_ratio);
 		boost::property_tree::ptree response_l;
 		response_l.put ("amount", result.convert_to<std::string> ());
 		response (response_l);
@@ -1946,7 +1946,7 @@ void paper::rpc_handler::mpaper_to_raw ()
 	paper::uint128_union amount;
 	if (!amount.decode_dec (amount_text))
 	{
-		auto result (amount.number () * paper::Mxrb_ratio);
+		auto result (amount.number () * paper::Mppr_ratio);
 		if (result > amount.number ())
 		{
 			boost::property_tree::ptree response_l;
@@ -1970,7 +1970,7 @@ void paper::rpc_handler::kpaper_from_raw ()
 	paper::uint128_union amount;
 	if (!amount.decode_dec (amount_text))
 	{
-		auto result (amount.number () / paper::kxrb_ratio);
+		auto result (amount.number () / paper::kppr_ratio);
 		boost::property_tree::ptree response_l;
 		response_l.put ("amount", result.convert_to<std::string> ());
 		response (response_l);
@@ -1987,7 +1987,7 @@ void paper::rpc_handler::kpaper_to_raw ()
 	paper::uint128_union amount;
 	if (!amount.decode_dec (amount_text))
 	{
-		auto result (amount.number () * paper::kxrb_ratio);
+		auto result (amount.number () * paper::kppr_ratio);
 		if (result > amount.number ())
 		{
 			boost::property_tree::ptree response_l;
@@ -2518,7 +2518,7 @@ void paper::rpc_handler::paper_from_raw ()
 	paper::uint128_union amount;
 	if (!amount.decode_dec (amount_text))
 	{
-		auto result (amount.number () / paper::xrb_ratio);
+		auto result (amount.number () / paper::ppr_ratio);
 		boost::property_tree::ptree response_l;
 		response_l.put ("amount", result.convert_to<std::string> ());
 		response (response_l);
@@ -2535,7 +2535,7 @@ void paper::rpc_handler::paper_to_raw ()
 	paper::uint128_union amount;
 	if (!amount.decode_dec (amount_text))
 	{
-		auto result (amount.number () * paper::xrb_ratio);
+		auto result (amount.number () * paper::ppr_ratio);
 		if (result > amount.number ())
 		{
 			boost::property_tree::ptree response_l;

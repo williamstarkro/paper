@@ -1,0 +1,2 @@
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc libnode.a  CMakeFiles/node.dir/paper/node/bootstrap.cpp.o CMakeFiles/node.dir/paper/node/common.cpp.o CMakeFiles/node.dir/paper/node/node.cpp.o CMakeFiles/node.dir/paper/node/openclwork.cpp.o CMakeFiles/node.dir/paper/node/rpc.cpp.o CMakeFiles/node.dir/paper/node/testing.cpp.o CMakeFiles/node.dir/paper/node/wallet.cpp.o
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib libnode.a

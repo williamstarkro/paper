@@ -3,7 +3,7 @@
 #include <array>
 #include <atomic>
 #include <condition_variable>
-#include <type_tpaperts>
+#include <type_traits>
 
 #include <boost/filesystem.hpp>
 #include <boost/iostreams/device/back_inserter.hpp>
