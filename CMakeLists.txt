@@ -1,0 +1,182 @@
+cmake_minimum_required (VERSION 2.8.11)
+project (paper)
+
+if (WIN32)
+    set (PLATFORM_COMPILE_FLAGS "-D_WIN32_WINNT=0x0501 -DWINVER=0x0501")
+else (WIN32)
+    set (PLATFORM_COMPILE_FLAGS -fPIC)
+endif (WIN32)
+
+if (WIN32)
+	set (PLATFORM_GUI_EXE_LINK_FLAGS "-mwindows")
+else (WIN32)
+	set (PLATFORM_GUI_EXE_LINK_FLAGS "")
+endif (WIN32)
+
+include_directories (${CMAKE_SOURCE_DIR})
+
+find_package (Boost REQUIRED COMPONENTS filesystem system thread program_options)
+include_directories (${Boost_INCLUDE_DIR})
+
+find_package (GTest REQUIRED)
+include_directories (${GTEST_INCLUDE_DIR})
+
+find_package (CryptoPP REQUIRED)
+include_directories (${CRYPTOPP_INCLUDE_DIR})
+
+find_package (Qt5 REQUIRED COMPONENTS Core Gui Widgets Test)
+include_directories (${Qt5Core_INCLUDE_DIRS} ${Qt5Gui_INCLUDE_DIRS} ${Qt5Widgets_INCLUDE_DIRS} ${Qt5Test_INCLUDE_DIRS})
+
+include_directories (${CPPNETLIB_INCLUDE_DIRS})
+
+find_package (LevelDB REQUIRED)
+include_directories (${LevelDB_INCLUDE_PATH})
+
+add_library (secure
+	paper/secure.hpp
+	paper/secure.cpp
+	)
+
+add_library (core
+	paper/core/core.hpp
+	paper/core/core.cpp
+    ed25519-donna/ed25519-hash-custom.h
+    ed25519-donna/ed25519-randombytes-custom.h
+    ed25519-donna/ed25519.h
+    ed25519-donna/ed25519.cpp
+    )
+
+add_executable (core_test
+	paper/test/block.cpp
+    paper/test/block_store.cpp
+    paper/test/client.cpp
+    paper/test/daemon.cpp
+	paper/test/entry.cpp
+	paper/test/ledger.cpp
+    paper/test/message.cpp
+    paper/test/processor_service.cpp
+    paper/test/peer_container.cpp
+    paper/test/network.cpp
+    paper/test/uint256_union.cpp
+    paper/test/wallet_test.cpp
+    )
+    
+add_executable (qt_test
+    paper/qt_test/qt.cpp)
+    
+add_executable (cli
+    paper/cli/daemon.cpp
+    paper/cli/daemon.hpp
+    paper/cli/entry.cpp)
+    
+add_library (qt
+    paper/qt/qt.cpp
+    paper/qt/qt.hpp)
+    
+add_executable (qt_client
+    paper/qt_client/entry.cpp)
+    
+add_executable (qt_system
+    paper/qt_system/entry.cpp)
+
+SET (GENESIS_KEY paper_test_address CACHE STRING "Select whether the genesis address is the test or live address")
+set_property (CACHE GENESIS_KEY PROPERTY STRINGS paper_test_address paper_live_address)
+
+SET (KDF_WORK_FACTOR kdf_test_work CACHE STRING "Selects whether full or test kdf work is performed")
+set_property (CACHE KDF_WORK_FACTOR PROPERTY STRINGS kdf_test_work kdf_full_work)
+
+SET (PUBLISH_WORK_FACTOR publish_test_work CACHE STRING "Selects whether full or test publish work is performed")
+set_property (CACHE PUBLISH_WORK_FACTOR PROPERTY STRINGS publish_test_work publish_full_work)
+
+set_target_properties (secure core core_test qt_test cli qt qt_client qt_system PROPERTIES COMPILE_FLAGS "-std=c++11 -Werror=switch ${PLATFORM_COMPILE_FLAGS} -DQT_NO_KEYWORDS -DGENESIS_KEY=${GENESIS_KEY} -DKDF_WORK_FACTOR=${KDF_WORK_FACTOR} -DPUBLISH_WORK_FACTOR=${PUBLISH_WORK_FACTOR} -DED25519_CUSTOMHASH -DED25519_CUSTOMRNG")
+set_target_properties (qt_client qt_test PROPERTIES LINK_FLAGS "${PLATFORM_GUI_EXE_LINK_FLAGS}")
+
+if (WIN32)
+    set (PLATFORM_LIBS ws2_32 mswsock)
+else (WIN32)
+    set (PLATFORM_LIBS)
+endif (WIN32)
+
+target_link_libraries (core_test core secure ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY} ${Boost_THREAD_LIBRARY} ${GTEST_MAIN_LIBRARY} ${GTEST_LIBRARY} ${CRYPTOPP_LIBRARY} ${CPPNETLIB_LIBRARIES} pthread ${PLATFORM_LIBS} ${LevelDB_LIBRARY})
+
+target_link_libraries (cli core secure ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY} ${Boost_THREAD_LIBRARY} ${Boost_PROGRAM_OPTIONS_LIBRARY} ${GTEST_MAIN_LIBRARY} ${GTEST_LIBRARY} ${CRYPTOPP_LIBRARY} ${CPPNETLIB_LIBRARIES} pthread ${PLATFORM_LIBS} ${LevelDB_LIBRARY})
+
+target_link_libraries (qt_test core secure qt ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY} ${Boost_THREAD_LIBRARY} ${GTEST_MAIN_LIBRARY} ${GTEST_LIBRARY} ${CRYPTOPP_LIBRARY} ${CPPNETLIB_LIBRARIES} Qt5::Core Qt5::Gui Qt5::Widgets Qt5::Test ${QT_QTGUI_LIBRARY} pthread ${PLATFORM_LIBS} ${LevelDB_LIBRARY})
+
+target_link_libraries (qt_client core secure qt ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY} ${Boost_THREAD_LIBRARY} ${GTEST_MAIN_LIBRARY} ${GTEST_LIBRARY} ${CRYPTOPP_LIBRARY} ${CPPNETLIB_LIBRARIES} Qt5::Core Qt5::Gui Qt5::Widgets ${QT_QTGUI_LIBRARY} pthread ${PLATFORM_LIBS} ${LevelDB_LIBRARY})
+
+target_link_libraries (qt_system core secure qt ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY} ${Boost_THREAD_LIBRARY} ${GTEST_MAIN_LIBRARY} ${GTEST_LIBRARY} ${CRYPTOPP_LIBRARY} ${CPPNETLIB_LIBRARIES} Qt5::Core Qt5::Gui Qt5::Widgets ${QT_QTGUI_LIBRARY} pthread ${PLATFORM_LIBS} ${LevelDB_LIBRARY})
+
+if (APPLE)
+    get_filename_component (Qt5Core_framework_DIR ${Qt5_DIR}/../../QtCore.framework ABSOLUTE)
+    message ("Qt5Core ${Qt5Core_framework_DIR}")
+    get_filename_component (Qt5Gui_framework_DIR ${Qt5_DIR}/../../QtGui.framework ABSOLUTE)
+    get_filename_component (Qt5PrintSupport_framework_DIR ${Qt5_DIR}/../../QtPrintSupport.framework ABSOLUTE)
+    get_filename_component (Qt5Test_framework_DIR ${Qt5_DIR}/../../QtTest.framework ABSOLUTE)
+    get_filename_component (Qt5Widgets_framework_DIR ${Qt5_DIR}/../../QtWidgets.framework ABSOLUTE)
+    get_filename_component (Qt5_platforms_DIR ${Qt5_DIR}/../../../plugins/platforms ABSOLUTE)
+
+    file (COPY ${Qt5Core_framework_DIR} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/packaging)
+    add_custom_command (TARGET qt_client POST_BUILD COMMAND "install_name_tool" "-id" "@executable_path/../Frameworks/QtCore.framework/Versions/5/QtCore" "${CMAKE_CURRENT_BINARY_DIR}/packaging/QtCore.framework/Versions/5/QtCore")
+
+    file (COPY ${Qt5Gui_framework_DIR} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/packaging)
+    add_custom_command (TARGET qt_client POST_BUILD COMMAND "install_name_tool" "-id" "@executable_path/../Frameworks/QtGui.framework/Versions/5/QtGui" "${CMAKE_CURRENT_BINARY_DIR}/packaging/QtGui.framework/Versions/5/QtGui")
+    add_custom_command (TARGET qt_client POST_BUILD COMMAND "install_name_tool" "-change" "${Qt5Core_framework_DIR}/Versions/5/QtCore" "@executable_path/../Frameworks/QtCore.framework/Versions/5/QtCore" "${CMAKE_CURRENT_BINARY_DIR}/packaging/QtGui.framework/Versions/5/QtGui")
+
+    file (COPY ${Qt5PrintSupport_framework_DIR} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/packaging)
+    add_custom_command (TARGET qt_client POST_BUILD COMMAND "install_name_tool" "-id" "@executable_path/../Frameworks/QtPrintSupport.framework/Versions/5/QtPrintSupport" "${CMAKE_CURRENT_BINARY_DIR}/packaging/QtPrintSupport.framework/Versions/5/QtPrintSupport")
+    add_custom_command (TARGET qt_client POST_BUILD COMMAND "install_name_tool" "-change" "${Qt5Core_framework_DIR}/Versions/5/QtCore" "@executable_path/../Frameworks/QtCore.framework/Versions/5/QtCore" "${CMAKE_CURRENT_BINARY_DIR}/packaging/QtPrintSupport.framework/Versions/5/QtPrintSupport")
+    add_custom_command (TARGET qt_client POST_BUILD COMMAND "install_name_tool" "-change" "${Qt5Gui_framework_DIR}/Versions/5/QtGui" "@executable_path/../Frameworks/QtGui.framework/Versions/5/QtGui" "${CMAKE_CURRENT_BINARY_DIR}/packaging/QtPrintSupport.framework/Versions/5/QtPrintSupport")
+    add_custom_command (TARGET qt_client POST_BUILD COMMAND "install_name_tool" "-change" "${Qt5Widgets_framework_DIR}/Versions/5/QtWidgets" "@executable_path/../Frameworks/QtWidgets.framework/Versions/5/QtWidgets" "${CMAKE_CURRENT_BINARY_DIR}/packaging/QtPrintSupport.framework/Versions/5/QtPrintSupport")
+
+    file (COPY ${Qt5Test_framework_DIR} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/packaging)
+    add_custom_command (TARGET qt_client POST_BUILD COMMAND "install_name_tool" "-id" "@executable_path/../Frameworks/QtTest.framework/Versions/5/QtTest" "${CMAKE_CURRENT_BINARY_DIR}/packaging/QtTest.framework/Versions/5/QtTest")
+    add_custom_command (TARGET qt_client POST_BUILD COMMAND "install_name_tool" "-change" "${Qt5Core_framework_DIR}/Versions/5/QtCore" "@executable_path/../Frameworks/QtCore.framework/Versions/5/QtCore" "${CMAKE_CURRENT_BINARY_DIR}/packaging/QtTest.framework/Versions/5/QtTest")
+
+    file (COPY ${Qt5Widgets_framework_DIR} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/packaging)
+    add_custom_command (TARGET qt_client POST_BUILD COMMAND "install_name_tool" "-id" "@executable_path/../Frameworks/QtWidgets.framework/Versions/5/QtWidgets" "${CMAKE_CURRENT_BINARY_DIR}/packaging/QtWidgets.framework/Versions/5/QtWidgets")
+    add_custom_command (TARGET qt_client POST_BUILD COMMAND "install_name_tool" "-change" "${Qt5Core_framework_DIR}/Versions/5/QtCore" "@executable_path/../Frameworks/QtCore.framework/Versions/5/QtCore" "${CMAKE_CURRENT_BINARY_DIR}/packaging/QtWidgets.framework/Versions/5/QtWidgets")
+    add_custom_command (TARGET qt_client POST_BUILD COMMAND "install_name_tool" "-change" "${Qt5Gui_framework_DIR}/Versions/5/QtGui" "@executable_path/../Frameworks/QtGui.framework/Versions/5/QtGui" "${CMAKE_CURRENT_BINARY_DIR}/packaging/QtWidgets.framework/Versions/5/QtWidgets")
+
+    file (COPY ${Qt5_DIR}/../../../plugins/platforms/libqcocoa.dylib DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/packaging)
+    add_custom_command (TARGET qt_client POST_BUILD COMMAND "install_name_tool" "-change" "${Qt5Core_framework_DIR}/Versions/5/QtCore" "@executable_path/../Frameworks/QtCore.framework/Versions/5/QtCore" "${CMAKE_CURRENT_BINARY_DIR}/packaging/libqcocoa.dylib")
+    add_custom_command (TARGET qt_client POST_BUILD COMMAND "install_name_tool" "-change" "${Qt5Gui_framework_DIR}/Versions/5/QtGui" "@executable_path/../Frameworks/QtGui.framework/Versions/5/QtGui" "${CMAKE_CURRENT_BINARY_DIR}/packaging/libqcocoa.dylib")
+    add_custom_command (TARGET qt_client POST_BUILD COMMAND "install_name_tool" "-change" "${Qt5PrintSupport_framework_DIR}/Versions/5/QtPrintSupport" "@executable_path/../Frameworks/QtPrintSupport.framework/Versions/5/QtPrintSupport" "${CMAKE_CURRENT_BINARY_DIR}/packaging/libqcocoa.dylib")
+    add_custom_command (TARGET qt_client POST_BUILD COMMAND "install_name_tool" "-change" "${Qt5Widgets_framework_DIR}/Versions/5/QtWidgets" "@executable_path/../Frameworks/QtWidgets.framework/Versions/5/QtWidgets" "${CMAKE_CURRENT_BINARY_DIR}/packaging/libqcocoa.dylib")
+
+    add_custom_command (TARGET qt_client POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:qt_client> ${CMAKE_CURRENT_BINARY_DIR}/packaging)
+    add_custom_command (TARGET qt_client POST_BUILD COMMAND "install_name_tool" "-change" "${Qt5Core_framework_DIR}/Versions/5/QtCore" "@executable_path/../Frameworks/QtCore.framework/Versions/5/QtCore" "${CMAKE_CURRENT_BINARY_DIR}/packaging/qt_client")
+    add_custom_command (TARGET qt_client POST_BUILD COMMAND "install_name_tool" "-change" "${Qt5Gui_framework_DIR}/Versions/5/QtGui" "@executable_path/../Frameworks/QtGui.framework/Versions/5/QtGui" "${CMAKE_CURRENT_BINARY_DIR}/packaging/qt_client")
+    add_custom_command (TARGET qt_client POST_BUILD COMMAND "install_name_tool" "-change" "${Qt5Widgets_framework_DIR}/Versions/5/QtWidgets" "@executable_path/../Frameworks/QtWidgets.framework/Versions/5/QtWidgets" "${CMAKE_CURRENT_BINARY_DIR}/packaging/qt_client")
+
+    install (FILES ${CMAKE_CURRENT_BINARY_DIR}/packaging/qt_client DESTINATION Paper.app/Contents/MacOS PERMISSIONS OWNER_EXECUTE OWNER_READ)
+    install (FILES Info.plist DESTINATION Paper.app/Contents)
+    install (FILES qt.conf DESTINATION Paper.app/Contents/Resources)
+    install (DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/packaging/QtCore.framework" DESTINATION Paper.app/Contents/Frameworks USE_SOURCE_PERMISSIONS)
+    install (DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/packaging/QtGui.framework" DESTINATION Paper.app/Contents/Frameworks USE_SOURCE_PERMISSIONS)
+    install (DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/packaging/QtPrintSupport.framework" DESTINATION Paper.app/Contents/Frameworks USE_SOURCE_PERMISSIONS)
+    install (DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/packaging/QtTest.framework" DESTINATION Paper.app/Contents/Frameworks USE_SOURCE_PERMISSIONS)
+    install (DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/packaging/QtWidgets.framework" DESTINATION Paper.app/Contents/Frameworks USE_SOURCE_PERMISSIONS)
+    install (FILES "${CMAKE_CURRENT_BINARY_DIR}/packaging/libqcocoa.dylib" DESTINATION Paper.app/Contents/PlugIns/platforms PERMISSIONS OWNER_EXECUTE OWNER_READ)
+elseif (WIN32)
+	get_filename_component (Qt5_bin_DIR ${Qt5_DIR}/../../../bin ABSOLUTE)
+	install (TARGETS qt_client DESTINATION .)
+	install (FILES ${Qt5_bin_DIR}/icudt52.dll DESTINATION .)
+	install (FILES ${Qt5_bin_DIR}/icuin52.dll DESTINATION .)
+	install (FILES ${Qt5_bin_DIR}/icuuc52.dll DESTINATION .)
+	install (FILES c:/MinGW/bin/libgcc_s_dw2-1.dll DESTINATION .)
+	install (FILES c:/MinGW/bin/libstdc++-6.dll DESTINATION .)
+	install (FILES c:/MinGW/bin/libwinpthread-1.dll DESTINATION .)
+	install (FILES ${Qt5_bin_DIR}/Qt5Core.dll DESTINATION .)
+	install (FILES ${Qt5_bin_DIR}/Qt5Gui.dll DESTINATION .)
+	install (FILES ${Qt5_bin_DIR}/Qt5Widgets.dll DESTINATION .)
+	install (FILES ${Qt5_DIR}/../../../plugins/platforms/qwindows.dll DESTINATION platforms)
+else ()
+	install (TARGETS qt_client DESTINATION .)
+endif ()
+
+set (CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
+set (CPACK_PACKAGE_VERSION_MAJOR "1")
+set (CPACK_PACKAGE_VERSION_MINOR "0")
+
+include (CPack)
