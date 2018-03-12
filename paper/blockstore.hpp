@@ -89,7 +89,7 @@ public:
 	paper::store_iterator block_info_begin (MDB_txn *, paper::block_hash const &);
 	paper::store_iterator block_info_begin (MDB_txn *);
 	paper::store_iterator block_info_end ();
-	paper::uint128_t block_balance (MDB_txn *, paper::block_hash const &);
+	paper::uint128_t block_assetKey (MDB_txn *, paper::block_hash const &);
 	static size_t const block_info_max = 32;
 
 	paper::uint128_t representation_get (MDB_txn *, paper::account const &);

@@ -341,7 +341,7 @@ void paper::block_store::upgrade_v1_to_v2 (MDB_txn * transaction_a)
 			account = i->first.uint256 ();
 			paper::account_info_v1 v1 (i->second);
 			paper::account_info_v5 v2;
-			v2.balance = v1.balance;
+			v2.assetKey = v1.assetKey;
 			v2.head = v1.head;
 			v2.modified = v1.modified;
 			v2.rep_block = v1.rep_block;
@@ -375,7 +375,7 @@ void paper::block_store::upgrade_v2_to_v3 (MDB_txn * transaction_a)
 		assert (!visitor.result.is_zero ());
 		info.rep_block = visitor.result;
 		mdb_cursor_put (i.cursor, paper::mdb_val (account_l), info.val (), MDB_CURRENT);
-		representation_add (transaction_a, visitor.result, info.balance.number ());
+		representation_add (transaction_a, visitor.result, info.assetKey.number ());
 	}
 }
 
@@ -437,7 +437,7 @@ void paper::block_store::upgrade_v5_to_v6 (MDB_txn * transaction_a)
 			assert (block != nullptr);
 			hash = block->previous ();
 		}
-		paper::account_info info (info_old.head, info_old.rep_block, info_old.open_block, info_old.balance, info_old.modified, block_count);
+		paper::account_info info (info_old.head, info_old.rep_block, info_old.open_block, info_old.assetKey, info_old.modified, block_count);
 		headers.push_back (std::make_pair (account, info));
 	}
 	for (auto i (headers.begin ()), n (headers.end ()); i != n; ++i)
@@ -505,8 +505,8 @@ void paper::block_store::upgrade_v9_to_v10 (MDB_txn * transaction_a)
 				{
 					paper::block_info block_info;
 					block_info.account = account;
-					paper::amount balance (block_balance (transaction_a, hash));
-					block_info.balance = balance;
+					paper::assetKey assetKey (block_assetKey (transaction_a, hash));
+					block_info.assetKey = assetKey;
 					block_info_put (transaction_a, hash, block_info);
 				}
 				hash = block_successor (transaction_a, hash);
@@ -942,11 +942,11 @@ bool paper::block_store::block_info_get (MDB_txn * transaction_a, paper::block_h
 	else
 	{
 		result = false;
-		assert (value.size () == sizeof (block_info_a.account.bytes) + sizeof (block_info_a.balance.bytes));
+		assert (value.size () == sizeof (block_info_a.account.bytes) + sizeof (block_info_a.assetKey.bytes));
 		paper::bufferstream stream (reinterpret_cast<uint8_t const *> (value.data ()), value.size ());
 		auto error1 (paper::read (stream, block_info_a.account));
 		assert (!error1);
-		auto error2 (paper::read (stream, block_info_a.balance));
+		auto error2 (paper::read (stream, block_info_a.assetKey));
 		assert (!error2);
 	}
 	return result;
