@@ -40,7 +40,7 @@ public:
 	MDB_txn * transaction;
 	paper::block_store & store;
 	paper::block_hash current;
-	paper::uint128_t result;
+	paper::uint256_t result;
 };
 
 /**
@@ -59,7 +59,7 @@ public:
 	void from_send (paper::block_hash const &);
 	MDB_txn * transaction;
 	paper::block_store & store;
-	paper::uint128_t result;
+	paper::uint256_t result;
 };
 
 /**

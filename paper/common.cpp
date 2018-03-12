@@ -420,7 +420,7 @@ void paper::amount_visitor::send_block (paper::send_block const & block_a)
 	assetKey_visitor prev (transaction, store);
 	prev.compute (block_a.hashables.previous);
 	//result = prev.result - block_a.hashables.balance.number ();
-	result = block_a.hashables.assetKey.number;
+	result = block_a.hashables.assetKey.number ();
 }
 
 void paper::amount_visitor::receive_block (paper::receive_block const & block_a)
@@ -696,7 +696,7 @@ void paper::genesis::initialize (MDB_txn * transaction_a, paper::block_store & s
 	auto hash_l (hash ());
 	assert (store_a.latest_begin (transaction_a) == store_a.latest_end ());
 	store_a.block_put (transaction_a, hash_l, *open);
-	store_a.account_put (transaction_a, genesis_account, { hash_l, open->hash (), open->hash (), std::numeric_limits<paper::uint128_t>::max (), paper::seconds_since_epoch (), 1 });
+	store_a.account_put (transaction_a, genesis_account, { hash_l, open->hash (), open->hash (), std::numeric_limits<paper::uint256_t>::max (), paper::seconds_since_epoch (), 1 });
 	store_a.representation_put (transaction_a, genesis_account, std::numeric_limits<paper::uint128_t>::max ());
 	store_a.checksum_put (transaction_a, 0, 0, hash_l);
 	store_a.frontier_put (transaction_a, hash_l, genesis_account);
