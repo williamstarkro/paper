@@ -30,7 +30,7 @@ public:
 		assert (!error);
 		ledger.store.pending_del (transaction, key);
 		ledger.store.representation_add (transaction, ledger.representative (transaction, hash), pending.amount.number ());
-		ledger.change_latest (transaction, pending.source, block_a.hashables.previous, info.rep_block, ledger.balance (transaction, block_a.hashables.previous), info.block_count - 1);
+		ledger.change_latest (transaction, pending.source, block_a.hashables.previous, info.rep_block, ledger.assetKey (transaction, block_a.hashables.previous), info.block_count - 1);
 		ledger.store.block_del (transaction, hash);
 		ledger.store.frontier_del (transaction, hash);
 		ledger.store.frontier_put (transaction, block_a.hashables.previous, pending.source);
@@ -50,7 +50,7 @@ public:
 		auto error (ledger.store.account_get (transaction, destination_account, info));
 		assert (!error);
 		ledger.store.representation_add (transaction, ledger.representative (transaction, hash), 0 - amount);
-		ledger.change_latest (transaction, destination_account, block_a.hashables.previous, representative, ledger.balance (transaction, block_a.hashables.previous), info.block_count - 1);
+		ledger.change_latest (transaction, destination_account, block_a.hashables.previous, representative, ledger.assetKey (transaction, block_a.hashables.previous), info.block_count - 1);
 		ledger.store.block_del (transaction, hash);
 		ledger.store.pending_put (transaction, paper::pending_key (destination_account, block_a.hashables.source), { ledger.account (transaction, block_a.hashables.source), amount });
 		ledger.store.frontier_del (transaction, hash);
@@ -80,11 +80,12 @@ public:
 		paper::account_info info;
 		auto error (ledger.store.account_get (transaction, account, info));
 		assert (!error);
-		auto balance (ledger.balance (transaction, block_a.hashables.previous));
-		ledger.store.representation_add (transaction, representative, balance);
-		ledger.store.representation_add (transaction, hash, 0 - balance);
+		auto assetKey (ledger.assetKey (transaction, block_a.hashables.previous));
+		ledger.store.representation_add (transaction, representative, assetKey);
+		// to do...figure out the negative balance here, probably need to remove the assetkey from that account here
+		ledger.store.representation_add (transaction, hash, 0 - assetKey);
 		ledger.store.block_del (transaction, hash);
-		ledger.change_latest (transaction, account, block_a.hashables.previous, representative, info.balance, info.block_count - 1);
+		ledger.change_latest (transaction, account, block_a.hashables.previous, representative, info.assetKey, info.block_count - 1);
 		ledger.store.frontier_del (transaction, hash);
 		ledger.store.frontier_put (transaction, block_a.hashables.previous, account);
 		ledger.store.block_successor_clear (transaction, block_a.hashables.previous);
@@ -134,10 +135,11 @@ void ledger_processor::change_block (paper::change_block const & block_a)
 				if (result.code == paper::process_result::progress)
 				{
 					ledger.store.block_put (transaction, hash, block_a);
-					auto balance (ledger.balance (transaction, block_a.hashables.previous));
-					ledger.store.representation_add (transaction, hash, balance);
-					ledger.store.representation_add (transaction, info.rep_block, 0 - balance);
-					ledger.change_latest (transaction, account, hash, hash, info.balance, info.block_count + 1);
+					auto assetKey (ledger.assetKey (transaction, block_a.hashables.previous));
+					//to do handle the 0-asset key here
+					ledger.store.representation_add (transaction, hash, assetKey);
+					ledger.store.representation_add (transaction, info.rep_block, 0 - assetKey);
+					ledger.change_latest (transaction, account, hash, hash, info.assetKey, info.block_count + 1);
 					ledger.store.frontier_del (transaction, block_a.hashables.previous);
 					ledger.store.frontier_put (transaction, hash, account);
 					result.account = account;
@@ -170,13 +172,15 @@ void ledger_processor::send_block (paper::send_block const & block_a)
 					auto latest_error (ledger.store.account_get (transaction, account, info));
 					assert (!latest_error);
 					assert (info.head == block_a.hashables.previous);
-					result.code = info.balance.number () >= block_a.hashables.balance.number () ? paper::process_result::progress : paper::process_result::negative_spend; // Is this trying to spend a negative amount (Malicious)
+
+					//to do need to handle the logic here, we probably dont  need it for our case
+					result.code = info.assetKey.number () >= block_a.hashables.assetKey.number () ? paper::process_result::progress : paper::process_result::negative_spend; // Is this trying to spend a negative amount (Malicious)
 					if (result.code == paper::process_result::progress)
 					{
-						auto amount (info.balance.number () - block_a.hashables.balance.number ());
+						auto amount (info.assetKey.number () - block_a.hashables.assetKey.number ());
 						ledger.store.representation_add (transaction, info.rep_block, 0 - amount);
 						ledger.store.block_put (transaction, hash, block_a);
-						ledger.change_latest (transaction, account, hash, info.rep_block, block_a.hashables.balance, info.block_count + 1);
+						ledger.change_latest (transaction, account, hash, info.rep_block, block_a.hashables.assetKey, info.block_count + 1);
 						ledger.store.pending_put (transaction, paper::pending_key (block_a.hashables.destination, hash), { account, amount });
 						ledger.store.frontier_del (transaction, block_a.hashables.previous);
 						ledger.store.frontier_put (transaction, hash, account);
@@ -217,13 +221,14 @@ void ledger_processor::receive_block (paper::receive_block const & block_a)
 						result.code = ledger.store.pending_get (transaction, key, pending) ? paper::process_result::unreceivable : paper::process_result::progress; // Has this source already been received (Malformed)
 						if (result.code == paper::process_result::progress)
 						{
-							auto new_balance (info.balance.number () + pending.amount.number ());
+							//to do: check the logic here, probably just need to set the peding's asset key
+							auto new_assetKey (info.assetKey.number () + pending.amount.number ());
 							paper::account_info source_info;
 							auto error (ledger.store.account_get (transaction, pending.source, source_info));
 							assert (!error);
 							ledger.store.pending_del (transaction, key);
 							ledger.store.block_put (transaction, hash, block_a);
-							ledger.change_latest (transaction, account, hash, info.rep_block, new_balance, info.block_count + 1);
+							ledger.change_latest (transaction, account, hash, info.rep_block, new_assetKey, info.block_count + 1);
 							ledger.store.representation_add (transaction, info.rep_block, pending.amount.number ());
 							ledger.store.frontier_del (transaction, block_a.hashables.previous);
 							ledger.store.frontier_put (transaction, hash, account);
@@ -344,23 +349,23 @@ std::map<paper::uint128_t, std::shared_ptr<paper::block>, std::greater<paper::ui
 	return result;
 }
 
-// Balance for account containing hash
-paper::uint128_t paper::ledger::balance (MDB_txn * transaction_a, paper::block_hash const & hash_a)
+// AssetKey for account containing hash
+paper::uint128_t paper::ledger::assetKey (MDB_txn * transaction_a, paper::block_hash const & hash_a)
 {
-	balance_visitor visitor (transaction_a, store);
+	assetKey_visitor visitor (transaction_a, store);
 	visitor.compute (hash_a);
 	return visitor.result;
 }
 
 // Balance for an account by account number
-paper::uint128_t paper::ledger::account_balance (MDB_txn * transaction_a, paper::account const & account_a)
+paper::uint128_t paper::ledger::account_assetKey (MDB_txn * transaction_a, paper::account const & account_a)
 {
 	paper::uint128_t result (0);
 	paper::account_info info;
 	auto none (store.account_get (transaction_a, account_a, info));
 	if (!none)
 	{
-		result = info.balance.number ();
+		result = info.assetKey.number ();
 	}
 	return result;
 }
@@ -387,7 +392,7 @@ paper::process_return paper::ledger::process (MDB_txn * transaction_a, paper::bl
 // Money supply for heuristically calculating vote percentages
 paper::uint128_t paper::ledger::supply (MDB_txn * transaction_a)
 {
-	auto unallocated (account_balance (transaction_a, paper::genesis_account));
+	auto unallocated (account_assetKey (transaction_a, paper::genesis_account));
 	auto burned (account_pending (transaction_a, 0));
 	auto absolute_supply (paper::genesis_amount - unallocated - burned);
 	auto adjusted_supply (absolute_supply - inactive_supply);
@@ -561,7 +566,7 @@ void paper::ledger::checksum_update (MDB_txn * transaction_a, paper::block_hash 
 	store.checksum_put (transaction_a, 0, 0, value);
 }
 
-void paper::ledger::change_latest (MDB_txn * transaction_a, paper::account const & account_a, paper::block_hash const & hash_a, paper::block_hash const & rep_block_a, paper::amount const & balance_a, uint64_t block_count_a)
+void paper::ledger::change_latest (MDB_txn * transaction_a, paper::account const & account_a, paper::block_hash const & hash_a, paper::block_hash const & rep_block_a, paper::assetKey const & assetKey_a, uint64_t block_count_a)
 {
 	paper::account_info info;
 	auto exists (!store.account_get (transaction_a, account_a, info));
@@ -578,7 +583,7 @@ void paper::ledger::change_latest (MDB_txn * transaction_a, paper::account const
 	{
 		info.head = hash_a;
 		info.rep_block = rep_block_a;
-		info.balance = balance_a;
+		info.assetKey = assetKey_a;
 		info.modified = paper::seconds_since_epoch ();
 		info.block_count = block_count_a;
 		store.account_put (transaction_a, account_a, info);
@@ -586,7 +591,7 @@ void paper::ledger::change_latest (MDB_txn * transaction_a, paper::account const
 		{
 			paper::block_info block_info;
 			block_info.account = account_a;
-			block_info.balance = balance_a;
+			block_info.assetKey = assetKey_a;
 			store.block_info_put (transaction_a, hash_a, block_info);
 		}
 		checksum_update (transaction_a, hash_a);

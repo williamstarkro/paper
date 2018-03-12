@@ -22,8 +22,9 @@ public:
 	std::map<paper::uint128_t, std::shared_ptr<paper::block>, std::greater<paper::uint128_t>> tally (MDB_txn *, paper::votes const &);
 	paper::account account (MDB_txn *, paper::block_hash const &);
 	paper::uint128_t amount (MDB_txn *, paper::block_hash const &);
-	paper::uint128_t balance (MDB_txn *, paper::block_hash const &);
-	paper::uint128_t account_balance (MDB_txn *, paper::account const &);
+	//to do - decide the type for assetkey
+	paper::uint128_t assetKey (MDB_txn *, paper::block_hash const &);
+	paper::uint128_t account_assetKey (MDB_txn *, paper::account const &);
 	paper::uint128_t account_pending (MDB_txn *, paper::account const &);
 	paper::uint128_t weight (MDB_txn *, paper::account const &);
 	std::unique_ptr<paper::block> successor (MDB_txn *, paper::block_hash const &);

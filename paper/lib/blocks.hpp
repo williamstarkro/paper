@@ -66,18 +66,18 @@ public:
 class send_hashables
 {
 public:
-	send_hashables (paper::account const &, paper::block_hash const &, paper::amount const &);
+	send_hashables (paper::account const &, paper::block_hash const &, paper::assetKey const &);
 	send_hashables (bool &, paper::stream &);
 	send_hashables (bool &, boost::property_tree::ptree const &);
 	void hash (blake2b_state &) const;
 	paper::block_hash previous;
 	paper::account destination;
-	paper::amount balance;
+	paper::assetKey assetKey;
 };
 class send_block : public paper::block
 {
 public:
-	send_block (paper::block_hash const &, paper::account const &, paper::amount const &, paper::raw_key const &, paper::public_key const &, uint64_t);
+	send_block (paper::block_hash const &, paper::account const &, paper::assetKey const &, paper::raw_key const &, paper::public_key const &, uint64_t);
 	send_block (bool &, paper::stream &);
 	send_block (bool &, boost::property_tree::ptree const &);
 	virtual ~send_block () = default;
@@ -99,7 +99,7 @@ public:
 	void signature_set (paper::uint512_union const &) override;
 	bool operator== (paper::block const &) const override;
 	bool operator== (paper::send_block const &) const;
-	static size_t constexpr size = sizeof (paper::account) + sizeof (paper::block_hash) + sizeof (paper::amount) + sizeof (paper::signature) + sizeof (uint64_t);
+	static size_t constexpr size = sizeof (paper::account) + sizeof (paper::block_hash) + sizeof (paper::assetKey) + sizeof (paper::signature) + sizeof (uint64_t);
 	send_hashables hashables;
 	paper::signature signature;
 	uint64_t work;

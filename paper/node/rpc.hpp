@@ -94,7 +94,7 @@ public:
 class payment_observer : public std::enable_shared_from_this<paper::payment_observer>
 {
 public:
-	payment_observer (std::function<void(boost::property_tree::ptree const &)> const &, paper::rpc &, paper::account const &, paper::amount const &);
+	payment_observer (std::function<void(boost::property_tree::ptree const &)> const &, paper::rpc &, paper::account const &, paper::assetKey const &);
 	~payment_observer ();
 	void start (uint64_t);
 	void observe ();
@@ -104,7 +104,7 @@ public:
 	std::condition_variable condition;
 	paper::rpc & rpc;
 	paper::account account;
-	paper::amount amount;
+	paper::assetKey amount;
 	std::function<void(boost::property_tree::ptree const &)> response;
 	std::atomic_flag completed;
 };
@@ -113,7 +113,7 @@ class rpc_handler : public std::enable_shared_from_this<paper::rpc_handler>
 public:
 	rpc_handler (paper::node &, paper::rpc &, std::string const &, std::function<void(boost::property_tree::ptree const &)> const &);
 	void process_request ();
-	void account_balance ();
+	void account_assetKey();
 	void account_block_count ();
 	void account_create ();
 	void account_get ();
@@ -126,7 +126,7 @@ public:
 	void account_representative ();
 	void account_representative_set ();
 	void account_weight ();
-	void accounts_balances ();
+	void accounts_assetKeys ();
 	void accounts_create ();
 	void accounts_frontiers ();
 	void accounts_pending ();
@@ -185,8 +185,8 @@ public:
 	void validate_account_number ();
 	void version ();
 	void wallet_add ();
-	void wallet_balance_total ();
-	void wallet_balances ();
+	void wallet_assetKey_total ();
+	void wallet_assetKeys ();
 	void wallet_change_seed ();
 	void wallet_contains ();
 	void wallet_create ();

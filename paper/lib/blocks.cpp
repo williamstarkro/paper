@@ -76,10 +76,10 @@ void paper::send_block::block_work_set (uint64_t work_a)
 	work = work_a;
 }
 
-paper::send_hashables::send_hashables (paper::block_hash const & previous_a, paper::account const & destination_a, paper::amount const & balance_a) :
+paper::send_hashables::send_hashables (paper::block_hash const & previous_a, paper::account const & destination_a, paper::assetKey const &  assetKey_a) :
 previous (previous_a),
 destination (destination_a),
-balance (balance_a)
+assetKey (assetKey_a)
 {
 }
 
@@ -91,7 +91,7 @@ paper::send_hashables::send_hashables (bool & error_a, paper::stream & stream_a)
 		error_a = paper::read (stream_a, destination.bytes);
 		if (!error_a)
 		{
-			error_a = paper::read (stream_a, balance.bytes);
+			error_a = paper::read (stream_a, assetKey.bytes);
 		}
 	}
 }
@@ -102,14 +102,14 @@ paper::send_hashables::send_hashables (bool & error_a, boost::property_tree::ptr
 	{
 		auto previous_l (tree_a.get<std::string> ("previous"));
 		auto destination_l (tree_a.get<std::string> ("destination"));
-		auto balance_l (tree_a.get<std::string> ("balance"));
+		auto assetKey_l (tree_a.get<std::string> ("assetKey"));
 		error_a = previous.decode_hex (previous_l);
 		if (!error_a)
 		{
 			error_a = destination.decode_account (destination_l);
 			if (!error_a)
 			{
-				error_a = balance.decode_hex (balance_l);
+				error_a = assetKey.decode_hex (assetKey_l);
 			}
 		}
 	}
@@ -125,7 +125,7 @@ void paper::send_hashables::hash (blake2b_state & hash_a) const
 	assert (status == 0);
 	status = blake2b_update (&hash_a, destination.bytes.data (), sizeof (destination.bytes));
 	assert (status == 0);
-	status = blake2b_update (&hash_a, balance.bytes.data (), sizeof (balance.bytes));
+	status = blake2b_update (&hash_a, assetKey.bytes.data (), sizeof (assetKey.bytes));
 	assert (status == 0);
 }
 
@@ -133,7 +133,7 @@ void paper::send_block::serialize (paper::stream & stream_a) const
 {
 	write (stream_a, hashables.previous.bytes);
 	write (stream_a, hashables.destination.bytes);
-	write (stream_a, hashables.balance.bytes);
+	write (stream_a, hashables.assetKey.bytes);
 	write (stream_a, signature.bytes);
 	write (stream_a, work);
 }
@@ -146,9 +146,9 @@ void paper::send_block::serialize_json (std::string & string_a) const
 	hashables.previous.encode_hex (previous);
 	tree.put ("previous", previous);
 	tree.put ("destination", hashables.destination.to_account ());
-	std::string balance;
-	hashables.balance.encode_hex (balance);
-	tree.put ("balance", balance);
+	std::string assetKey;
+	hashables.assetKey.encode_hex (assetKey);
+	tree.put ("assetKey", assetKey);
 	std::string signature_l;
 	signature.encode_hex (signature_l);
 	tree.put ("work", paper::to_string_hex (work));
@@ -167,7 +167,7 @@ bool paper::send_block::deserialize (paper::stream & stream_a)
 		error = read (stream_a, hashables.destination.bytes);
 		if (!error)
 		{
-			error = read (stream_a, hashables.balance.bytes);
+			error = read (stream_a, hashables.assetKey.bytes);
 			if (!error)
 			{
 				error = read (stream_a, signature.bytes);
@@ -189,7 +189,7 @@ bool paper::send_block::deserialize_json (boost::property_tree::ptree const & tr
 		assert (tree_a.get<std::string> ("type") == "send");
 		auto previous_l (tree_a.get<std::string> ("previous"));
 		auto destination_l (tree_a.get<std::string> ("destination"));
-		auto balance_l (tree_a.get<std::string> ("balance"));
+		auto assetKey_l (tree_a.get<std::string> ("assetKey"));
 		auto work_l (tree_a.get<std::string> ("work"));
 		auto signature_l (tree_a.get<std::string> ("signature"));
 		error = hashables.previous.decode_hex (previous_l);
@@ -198,7 +198,7 @@ bool paper::send_block::deserialize_json (boost::property_tree::ptree const & tr
 			error = hashables.destination.decode_account (destination_l);
 			if (!error)
 			{
-				error = hashables.balance.decode_hex (balance_l);
+				error = hashables.assetKey.decode_hex (assetKey_l);
 				if (!error)
 				{
 					error = paper::from_string_hex (work_l, work);
@@ -217,8 +217,8 @@ bool paper::send_block::deserialize_json (boost::property_tree::ptree const & tr
 	return error;
 }
 
-paper::send_block::send_block (paper::block_hash const & previous_a, paper::account const & destination_a, paper::amount const & balance_a, paper::raw_key const & prv_a, paper::public_key const & pub_a, uint64_t work_a) :
-hashables (previous_a, destination_a, balance_a),
+paper::send_block::send_block (paper::block_hash const & previous_a, paper::account const & destination_a, paper::assetKey const & assetKey_a, paper::raw_key const & prv_a, paper::public_key const & pub_a, uint64_t work_a) :
+hashables (previous_a, destination_a, assetKey_a),
 signature (paper::sign_message (prv_a, pub_a, hash ())),
 work (work_a)
 {
@@ -277,7 +277,7 @@ paper::block_type paper::send_block::type () const
 
 bool paper::send_block::operator== (paper::send_block const & other_a) const
 {
-	auto result (hashables.destination == other_a.hashables.destination && hashables.previous == other_a.hashables.previous && hashables.balance == other_a.hashables.balance && work == other_a.work && signature == other_a.signature);
+	auto result (hashables.destination == other_a.hashables.destination && hashables.previous == other_a.hashables.previous && hashables.assetKey == other_a.hashables.assetKey && work == other_a.work && signature == other_a.signature);
 	return result;
 }
 

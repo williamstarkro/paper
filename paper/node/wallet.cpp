@@ -964,8 +964,8 @@ std::shared_ptr<paper::block> paper::wallet::send_action (paper::account const &
 				auto existing (store.find (transaction, source_a));
 				if (existing != store.end ())
 				{
-					auto balance (node.ledger.account_balance (transaction, source_a));
-					if (!balance.is_zero () && balance >= amount_a)
+					auto assetKey (node.ledger.account_assetKey (transaction, source_a));
+					if (!assetKey.is_zero () && assetKey >= amount_a)
 					{
 						paper::account_info info;
 						auto error1 (node.ledger.store.account_get (transaction, source_a, info));
@@ -973,7 +973,7 @@ std::shared_ptr<paper::block> paper::wallet::send_action (paper::account const &
 						paper::raw_key prv;
 						auto error2 (store.fetch (transaction, source_a, prv));
 						assert (!error2);
-						block.reset (new paper::send_block (info.head, account_a, balance - amount_a, prv, source_a, generate_work_a ? work_fetch (transaction, source_a, info.head) : 0));
+						block.reset (new paper::send_block (info.head, account_a, assetKey - amount_a, prv, source_a, generate_work_a ? work_fetch (transaction, source_a, info.head) : 0));
 						if (id_mdb_val)
 						{
 							auto status (mdb_put (transaction, node.wallets.send_action_ids, *id_mdb_val, paper::mdb_val (block->hash ()), 0));

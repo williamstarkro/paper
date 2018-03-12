@@ -141,7 +141,7 @@ void paper::rpc::start ()
 	}
 
 	acceptor.listen ();
-	node.observers.blocks.add ([this](std::shared_ptr<paper::block> block_a, paper::account const & account_a, paper::amount const &) {
+	node.observers.blocks.add ([this](std::shared_ptr<paper::block> block_a, paper::account const & account_a, paper::assetKey const &) {
 		observer_action (account_a);
 	});
 
@@ -225,17 +225,18 @@ bool decode_unsigned (std::string const & text, uint64_t & number)
 }
 }
 
-void paper::rpc_handler::account_balance ()
+//to do check the logic here
+void paper::rpc_handler::account_assetKey ()
 {
 	std::string account_text (request.get<std::string> ("account"));
 	paper::uint256_union account;
 	auto error (account.decode_account (account_text));
 	if (!error)
 	{
-		auto balance (node.balance_pending (account));
+		auto assetKey (node.assetKey_pending (account));
 		boost::property_tree::ptree response_l;
-		response_l.put ("balance", balance.first.convert_to<std::string> ());
-		response_l.put ("pending", balance.second.convert_to<std::string> ());
+		response_l.put ("assetKey", assetKey.first.convert_to<std::string> ());
+		response_l.put ("pending", assetKey.second.convert_to<std::string> ());
 		response (response_l);
 	}
 	else
@@ -366,9 +367,9 @@ void paper::rpc_handler::account_info ()
 			response_l.put ("frontier", info.head.to_string ());
 			response_l.put ("open_block", info.open_block.to_string ());
 			response_l.put ("representative_block", info.rep_block.to_string ());
-			std::string balance;
-			paper::uint128_union (info.balance).encode_dec (balance);
-			response_l.put ("balance", balance);
+			std::string assetKey;
+			paper::uint128_union (info.assetKey).encode_dec (assetKey);
+			response_l.put ("assetKey", assetKey);
 			response_l.put ("modified_timestamp", std::to_string (info.modified));
 			response_l.put ("block_count", std::to_string (info.block_count));
 			if (representative)
@@ -688,9 +689,9 @@ void paper::rpc_handler::account_weight ()
 	auto error (account.decode_account (account_text));
 	if (!error)
 	{
-		auto balance (node.weight (account));
+		auto assetKey (node.weight (account));
 		boost::property_tree::ptree response_l;
-		response_l.put ("weight", balance.convert_to<std::string> ());
+		response_l.put ("weight", assetKey.convert_to<std::string> ());
 		response (response_l);
 	}
 	else
@@ -699,10 +700,11 @@ void paper::rpc_handler::account_weight ()
 	}
 }
 
-void paper::rpc_handler::accounts_balances ()
+//need to verify the logic here
+void paper::rpc_handler::accounts_assetKeys ()
 {
 	boost::property_tree::ptree response_l;
-	boost::property_tree::ptree balances;
+	boost::property_tree::ptree assetKeys;
 	for (auto & accounts : request.get_child ("accounts"))
 	{
 		std::string account_text = accounts.second.data ();
@@ -711,17 +713,17 @@ void paper::rpc_handler::accounts_balances ()
 		if (!error)
 		{
 			boost::property_tree::ptree entry;
-			auto balance (node.balance_pending (account));
-			entry.put ("balance", balance.first.convert_to<std::string> ());
-			entry.put ("pending", balance.second.convert_to<std::string> ());
-			balances.push_back (std::make_pair (account.to_account (), entry));
+			auto assetKey (node.assetKey_pending (account));
+			entry.put ("assetKey", assetKey.first.convert_to<std::string> ());
+			entry.put ("pending", assetKey.second.convert_to<std::string> ());
+			assetKeys.push_back (std::make_pair (account.to_account (), entry));
 		}
 		else
 		{
 			error_response (response, "Bad account number");
 		}
 	}
-	response_l.add_child ("balances", balances);
+	response_l.add_child ("assetKey", assetKeys);
 	response (response_l);
 }
 
@@ -891,11 +893,13 @@ void paper::rpc_handler::accounts_pending ()
 
 void paper::rpc_handler::available_supply ()
 {
-	auto genesis_balance (node.balance (paper::genesis_account)); // Cold storage genesis
-	auto landing_balance (node.balance (paper::account ("059F68AAB29DE0D3A27443625C7EA9CDDB6517A8B76FE37727EF6A4D76832AD5"))); // Active unavailable account
-	auto faucet_balance (node.balance (paper::account ("8E319CE6F3025E5B2DF66DA7AB1467FE48F1679C13DD43BFDB29FA2E9FC40D3B"))); // Faucet account
-	auto burned_balance ((node.balance_pending (paper::account (0))).second); // Burning 0 account
-	auto available (paper::genesis_amount - genesis_balance - landing_balance - faucet_balance - burned_balance);
+	auto genesis_assetKey (node.assetKey (paper::genesis_account)); // Cold storage genesis
+	auto landing_assetKey(node.assetKey (paper::account ("059F68AAB29DE0D3A27443625C7EA9CDDB6517A8B76FE37727EF6A4D76832AD5"))); // Active unavailable account
+	auto faucet_assetKey (node.assetKey (paper::account ("8E319CE6F3025E5B2DF66DA7AB1467FE48F1679C13DD43BFDB29FA2E9FC40D3B"))); // Faucet account
+	auto burned_assetKey ((node.assetKey_pending (paper::account (0))).second); // Burning 0 account
+
+	//to do: this logic wont work
+	auto available (paper::genesis_amount - genesis_assetKey - landing_bassetKey - faucet_assetKey - burned_assetKey);
 	boost::property_tree::ptree response_l;
 	response_l.put ("available", available.convert_to<std::string> ());
 	response (response_l);
@@ -1164,7 +1168,7 @@ void paper::rpc_handler::block_create ()
 		paper::raw_key prv;
 		prv.data.clear ();
 		paper::uint256_union previous (0);
-		paper::uint128_union balance (0);
+		paper::uint128_union assetKey (0);
 		if (wallet != 0 && account != 0)
 		{
 			auto existing (node.wallets.items.find (wallet));
@@ -1179,7 +1183,7 @@ void paper::rpc_handler::block_create ()
 					{
 						existing->second->store.fetch (transaction, account, prv);
 						previous = node.ledger.latest (transaction, account);
-						balance = node.ledger.account_balance (transaction, account);
+						assetKey = node.ledger.account_assetKey (transaction, account);
 					}
 					else
 					{
@@ -1214,13 +1218,16 @@ void paper::rpc_handler::block_create ()
 				error_response (response, "Invalid previous hash");
 			}
 		}
-		boost::optional<std::string> balance_text (request.get_optional<std::string> ("balance"));
-		if (balance_text.is_initialized ())
+
+
+		//to-do a lot of logics here wont work
+		boost::optional<std::string> assetKey_text (request.get_optional<std::string> ("assetKey"));
+		if (assetKey_text.is_initialized ())
 		{
-			auto error_balance (balance.decode_dec (balance_text.get ()));
-			if (error_balance)
+			auto error_assetKey (assetKey.decode_dec (assetKey_text.get ()));
+			if (error_assetKey)
 			{
-				error_response (response, "Bad balance number");
+				error_response (response, "Bad assetKey number");
 			}
 		}
 		if (prv.data != 0)
@@ -1292,15 +1299,15 @@ void paper::rpc_handler::block_create ()
 			}
 			else if (type == "send")
 			{
-				if (destination != 0 && previous != 0 && balance != 0 && amount != 0)
+				if (destination != 0 && previous != 0 && assetKey != 0 && amount != 0)
 				{
-					if (balance.number () >= amount.number ())
+					if (assetKey.number () >= amount.number ())
 					{
 						if (work == 0)
 						{
 							work = node.generate_work (previous);
 						}
-						paper::send_block send (previous, destination, balance.number () - amount.number (), prv, pub, work);
+						paper::send_block send (previous, destination, assetKey.number () - amount.number (), prv, pub, work);
 						boost::property_tree::ptree response_l;
 						response_l.put ("hash", send.hash ().to_string ());
 						std::string contents;
@@ -1310,7 +1317,7 @@ void paper::rpc_handler::block_create ()
 					}
 					else
 					{
-						error_response (response, "Insufficient balance");
+						error_response (response, "Insufficient assetKey");
 					}
 				}
 				else
@@ -1470,9 +1477,9 @@ void paper::rpc_handler::delegators ()
 			assert (block != nullptr);
 			if (block->representative () == account)
 			{
-				std::string balance;
-				paper::uint128_union (info.balance).encode_dec (balance);
-				delegators.put (paper::account (i->first.uint256 ()).to_account (), balance);
+				std::string assetKey;
+				paper::uint128_union (info.assetKey).encode_dec (assetKey);
+				delegators.put (paper::account (i->first.uint256 ()).to_account (), assetKey);
 			}
 		}
 		response_l.add_child ("delegators", delegators);
@@ -1848,9 +1855,9 @@ void paper::rpc_handler::ledger ()
 				response_l.put ("frontier", info.head.to_string ());
 				response_l.put ("open_block", info.open_block.to_string ());
 				response_l.put ("representative_block", info.rep_block.to_string ());
-				std::string balance;
-				paper::uint128_union (info.balance).encode_dec (balance);
-				response_l.put ("balance", balance);
+				std::string assetKey;
+				paper::uint128_union (info.assetKey).encode_dec (assetKey);
+				response_l.put ("assetKey", assetKey);
 				response_l.put ("modified_timestamp", std::to_string (info.modified));
 				response_l.put ("block_count", std::to_string (info.block_count));
 				if (representative)
@@ -1877,8 +1884,8 @@ void paper::rpc_handler::ledger ()
 			std::vector<std::pair<paper::uint128_union, paper::account>> ledger_l;
 			for (auto i (node.store.latest_begin (transaction, start)), n (node.store.latest_end ()); i != n; ++i)
 			{
-				paper::uint128_union balance (paper::account_info (i->second).balance);
-				ledger_l.push_back (std::make_pair (balance, paper::account (i->first.uint256 ())));
+				paper::uint128_union assetKey (paper::account_info (i->second).assetKey);
+				ledger_l.push_back (std::make_pair (assetKey, paper::account (i->first.uint256 ())));
 			}
 			std::sort (ledger_l.begin (), ledger_l.end ());
 			std::reverse (ledger_l.begin (), ledger_l.end ());
@@ -1890,9 +1897,9 @@ void paper::rpc_handler::ledger ()
 				response_l.put ("frontier", info.head.to_string ());
 				response_l.put ("open_block", info.open_block.to_string ());
 				response_l.put ("representative_block", info.rep_block.to_string ());
-				std::string balance;
-				(i->first).encode_dec (balance);
-				response_l.put ("balance", balance);
+				std::string assetKey;
+				(i->first).encode_dec (assetKey);
+				response_l.put ("assetKey", assetKey);
 				response_l.put ("modified_timestamp", std::to_string (info.modified));
 				response_l.put ("block_count", std::to_string (info.block_count));
 				if (representative)
@@ -2252,7 +2259,7 @@ void paper::rpc_handler::payment_begin ()
 						}
 						else
 						{
-							if (!node.ledger.account_balance (transaction, account).is_zero ())
+							if (!node.ledger.account_assetKey (transaction, account).is_zero ())
 							{
 								BOOST_LOG (node.log) << boost::str (boost::format ("Skipping account %1% for use as a transaction account since it's balance isn't zero") % account.to_account ());
 								account.clear ();
@@ -2348,7 +2355,7 @@ void paper::rpc_handler::payment_end ()
 				auto existing (wallet->store.find (transaction, account));
 				if (existing != wallet->store.end ())
 				{
-					if (node.ledger.account_balance (transaction, account).is_zero ())
+					if (node.ledger.account_assetKey (transaction, account).is_zero ())
 					{
 						wallet->free_accounts.insert (account);
 						boost::property_tree::ptree response_l;
@@ -2950,7 +2957,7 @@ void paper::rpc_handler::send ()
 					if (!error)
 					{
 						std::string amount_text (request.get<std::string> ("amount"));
-						paper::amount amount;
+						paper::assetKey amount;
 						auto error (amount.decode_dec (amount_text));
 						if (!error)
 						{
@@ -2964,13 +2971,13 @@ void paper::rpc_handler::send ()
 									error_response (response, "Bad work");
 								}
 							}
-							paper::uint128_t balance (0);
+							paper::uint128_t assetKey (0);
 							{
 								paper::transaction transaction (node.store.environment, nullptr, work != 0); // false if no "work" in request, true if work > 0
 								paper::account_info info;
 								if (!node.store.account_get (transaction, source, info))
 								{
-									balance = (info.balance).number ();
+									assetKey = (info.assetKey).number ();
 								}
 								else
 								{
@@ -2989,7 +2996,7 @@ void paper::rpc_handler::send ()
 								}
 							}
 							boost::optional<std::string> send_id (request.get_optional<std::string> ("id"));
-							if (balance >= amount.number ())
+							if (assetKey >= amount.number ())
 							{
 								auto rpc_l (shared_from_this ());
 								auto response_a (response);
@@ -3255,7 +3262,8 @@ void paper::rpc_handler::wallet_add ()
 	}
 }
 
-void paper::rpc_handler::wallet_balance_total ()
+//to do: this won't work
+void paper::rpc_handler::wallet_assetKey_total ()
 {
 	std::string wallet_text (request.get<std::string> ("wallet"));
 	paper::uint256_union wallet;
@@ -3265,17 +3273,17 @@ void paper::rpc_handler::wallet_balance_total ()
 		auto existing (node.wallets.items.find (wallet));
 		if (existing != node.wallets.items.end ())
 		{
-			paper::uint128_t balance (0);
+			paper::uint128_t assetKey (0);
 			paper::uint128_t pending (0);
 			paper::transaction transaction (node.store.environment, nullptr, false);
 			for (auto i (existing->second->store.begin (transaction)), n (existing->second->store.end ()); i != n; ++i)
 			{
 				paper::account account (i->first.uint256 ());
-				balance = balance + node.ledger.account_balance (transaction, account);
+				assetKey = assetKey + node.ledger.account_assetKey (transaction, account);
 				pending = pending + node.ledger.account_pending (transaction, account);
 			}
 			boost::property_tree::ptree response_l;
-			response_l.put ("balance", balance.convert_to<std::string> ());
+			response_l.put ("assetKey", assetKey.convert_to<std::string> ());
 			response_l.put ("pending", pending.convert_to<std::string> ());
 			response (response_l);
 		}
@@ -3290,7 +3298,7 @@ void paper::rpc_handler::wallet_balance_total ()
 	}
 }
 
-void paper::rpc_handler::wallet_balances ()
+void paper::rpc_handler::wallet_assetKeys ()
 {
 	std::string wallet_text (request.get<std::string> ("wallet"));
 	paper::uint256_union wallet;
@@ -3311,33 +3319,33 @@ void paper::rpc_handler::wallet_balances ()
 		if (existing != node.wallets.items.end ())
 		{
 			boost::property_tree::ptree response_l;
-			boost::property_tree::ptree balances;
+			boost::property_tree::ptree assetKeys;
 			paper::transaction transaction (node.store.environment, nullptr, false);
 			for (auto i (existing->second->store.begin (transaction)), n (existing->second->store.end ()); i != n; ++i)
 			{
 				paper::account account (i->first.uint256 ());
-				paper::uint128_t balance = node.ledger.account_balance (transaction, account);
+				paper::uint128_t assetKey = node.ledger.account_assetKey (transaction, account);
 				if (threshold.is_zero ())
 				{
 					boost::property_tree::ptree entry;
 					paper::uint128_t pending = node.ledger.account_pending (transaction, account);
-					entry.put ("balance", balance.convert_to<std::string> ());
+					entry.put ("assetKey", assetKey.convert_to<std::string> ());
 					entry.put ("pending", pending.convert_to<std::string> ());
-					balances.push_back (std::make_pair (account.to_account (), entry));
+					assetKeys.push_back (std::make_pair (account.to_account (), entry));
 				}
 				else
 				{
-					if (balance >= threshold.number ())
+					if (assetKey >= threshold.number ())
 					{
 						boost::property_tree::ptree entry;
 						paper::uint128_t pending = node.ledger.account_pending (transaction, account);
-						entry.put ("balance", balance.convert_to<std::string> ());
+						entry.put ("assetKey", assetKey.convert_to<std::string> ());
 						entry.put ("pending", pending.convert_to<std::string> ());
-						balances.push_back (std::make_pair (account.to_account (), entry));
+						assetKeys.push_back (std::make_pair (account.to_account (), entry));
 					}
 				}
 			}
-			response_l.add_child ("balances", balances);
+			response_l.add_child ("assetKeys", assetKeys);
 			response (response_l);
 		}
 		else
@@ -4266,9 +4274,9 @@ void paper::rpc_handler::process_request ()
 		{
 			BOOST_LOG (node.log) << body;
 		}
-		if (action == "account_balance")
+		if (action == "account_assetKey")
 		{
-			account_balance ();
+			account_assetKey ();
 		}
 		else if (action == "account_block_count")
 		{
@@ -4318,9 +4326,9 @@ void paper::rpc_handler::process_request ()
 		{
 			account_weight ();
 		}
-		else if (action == "accounts_balances")
+		else if (action == "accounts_assetKeys")
 		{
-			accounts_balances ();
+			accounts_assetKeys ();
 		}
 		else if (action == "accounts_create")
 		{
@@ -4554,13 +4562,13 @@ void paper::rpc_handler::process_request ()
 		{
 			wallet_add ();
 		}
-		else if (action == "wallet_balance_total")
+		else if (action == "wallet_assetKey_total")
 		{
-			wallet_balance_total ();
+			wallet_assetKey_total ();
 		}
-		else if (action == "wallet_balances")
+		else if (action == "wallet_assetKeys")
 		{
-			wallet_balances ();
+			wallet_assetKeys ();
 		}
 		else if (action == "wallet_change_seed")
 		{
@@ -4669,7 +4677,7 @@ void paper::rpc_handler::process_request ()
 	}
 }
 
-paper::payment_observer::payment_observer (std::function<void(boost::property_tree::ptree const &)> const & response_a, paper::rpc & rpc_a, paper::account const & account_a, paper::amount const & amount_a) :
+paper::payment_observer::payment_observer (std::function<void(boost::property_tree::ptree const &)> const & response_a, paper::rpc & rpc_a, paper::account const & account_a, paper::assetKey const & amount_a) :
 rpc (rpc_a),
 account (account_a),
 amount (amount_a),
@@ -4690,9 +4698,11 @@ paper::payment_observer::~payment_observer ()
 {
 }
 
+
+//to do: verify this logic
 void paper::payment_observer::observe ()
 {
-	if (rpc.node.balance (account) >= amount.number ())
+	if (rpc.node.assetKey (account) >= amount.number ())
 	{
 		complete (paper::payment_status::success);
 	}

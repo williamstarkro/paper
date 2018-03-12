@@ -11,14 +11,14 @@ modified (0)
 paper::account_info_v1::account_info_v1 (MDB_val const & val_a)
 {
 	assert (val_a.mv_size == sizeof (*this));
-	static_assert (sizeof (head) + sizeof (rep_block) + sizeof (balance) + sizeof (modified) == sizeof (*this), "Class not packed");
+	static_assert (sizeof (head) + sizeof (rep_block) + sizeof (assetKey) + sizeof (modified) == sizeof (*this), "Class not packed");
 	std::copy (reinterpret_cast<uint8_t const *> (val_a.mv_data), reinterpret_cast<uint8_t const *> (val_a.mv_data) + sizeof (*this), reinterpret_cast<uint8_t *> (this));
 }
 
-paper::account_info_v1::account_info_v1 (paper::block_hash const & head_a, paper::block_hash const & rep_block_a, paper::amount const & balance_a, uint64_t modified_a) :
+paper::account_info_v1::account_info_v1 (paper::block_hash const & head_a, paper::block_hash const & rep_block_a, paper::assetKey const & assetKey_a, uint64_t modified_a) :
 head (head_a),
 rep_block (rep_block_a),
-balance (balance_a),
+assetKey (assetKey_a),
 modified (modified_a)
 {
 }
@@ -27,7 +27,7 @@ void paper::account_info_v1::serialize (paper::stream & stream_a) const
 {
 	write (stream_a, head.bytes);
 	write (stream_a, rep_block.bytes);
-	write (stream_a, balance.bytes);
+	write (stream_a, assetKey.bytes);
 	write (stream_a, modified);
 }
 
@@ -39,7 +39,7 @@ bool paper::account_info_v1::deserialize (paper::stream & stream_a)
 		error = read (stream_a, rep_block.bytes);
 		if (!error)
 		{
-			error = read (stream_a, balance.bytes);
+			error = read (stream_a, assetKey.bytes);
 			if (!error)
 			{
 				error = read (stream_a, modified);
@@ -68,7 +68,7 @@ paper::pending_info_v3::pending_info_v3 (MDB_val const & val_a)
 	std::copy (reinterpret_cast<uint8_t const *> (val_a.mv_data), reinterpret_cast<uint8_t const *> (val_a.mv_data) + sizeof (*this), reinterpret_cast<uint8_t *> (this));
 }
 
-paper::pending_info_v3::pending_info_v3 (paper::account const & source_a, paper::amount const & amount_a, paper::account const & destination_a) :
+paper::pending_info_v3::pending_info_v3 (paper::account const & source_a, paper::assetKey const & amount_a, paper::account const & destination_a) :
 source (source_a),
 amount (amount_a),
 destination (destination_a)
@@ -110,7 +110,7 @@ paper::account_info_v5::account_info_v5 () :
 head (0),
 rep_block (0),
 open_block (0),
-balance (0),
+assetKey (0),
 modified (0)
 {
 }
@@ -118,15 +118,15 @@ modified (0)
 paper::account_info_v5::account_info_v5 (MDB_val const & val_a)
 {
 	assert (val_a.mv_size == sizeof (*this));
-	static_assert (sizeof (head) + sizeof (rep_block) + sizeof (open_block) + sizeof (balance) + sizeof (modified) == sizeof (*this), "Class not packed");
+	static_assert (sizeof (head) + sizeof (rep_block) + sizeof (open_block) + sizeof (assetKey) + sizeof (modified) == sizeof (*this), "Class not packed");
 	std::copy (reinterpret_cast<uint8_t const *> (val_a.mv_data), reinterpret_cast<uint8_t const *> (val_a.mv_data) + sizeof (*this), reinterpret_cast<uint8_t *> (this));
 }
 
-paper::account_info_v5::account_info_v5 (paper::block_hash const & head_a, paper::block_hash const & rep_block_a, paper::block_hash const & open_block_a, paper::amount const & balance_a, uint64_t modified_a) :
+paper::account_info_v5::account_info_v5 (paper::block_hash const & head_a, paper::block_hash const & rep_block_a, paper::block_hash const & open_block_a, paper::assetKey const & assetKey_a, uint64_t modified_a) :
 head (head_a),
 rep_block (rep_block_a),
 open_block (open_block_a),
-balance (balance_a),
+assetKey (assetKey_a),
 modified (modified_a)
 {
 }
@@ -136,7 +136,7 @@ void paper::account_info_v5::serialize (paper::stream & stream_a) const
 	write (stream_a, head.bytes);
 	write (stream_a, rep_block.bytes);
 	write (stream_a, open_block.bytes);
-	write (stream_a, balance.bytes);
+	write (stream_a, assetKey.bytes);
 	write (stream_a, modified);
 }
 
@@ -151,7 +151,7 @@ bool paper::account_info_v5::deserialize (paper::stream & stream_a)
 			error = read (stream_a, open_block.bytes);
 			if (!error)
 			{
-				error = read (stream_a, balance.bytes);
+				error = read (stream_a, assetKey.bytes);
 				if (!error)
 				{
 					error = read (stream_a, modified);

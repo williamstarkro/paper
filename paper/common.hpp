@@ -25,13 +25,13 @@ namespace paper
 {
 class block_store;
 /**
- * Determine the balance as of this block
+ * Determine the Asset Key as of this block
  */
-class balance_visitor : public paper::block_visitor
+class assetKey_visitor : public paper::block_visitor
 {
 public:
-	balance_visitor (MDB_txn *, paper::block_store &);
-	virtual ~balance_visitor () = default;
+	assetKey_visitor (MDB_txn *, paper::block_store &);
+	virtual ~assetKey_visitor () = default;
 	void compute (paper::block_hash const &);
 	void send_block (paper::send_block const &) override;
 	void receive_block (paper::receive_block const &) override;
@@ -105,7 +105,7 @@ public:
 	account_info ();
 	account_info (MDB_val const &);
 	account_info (paper::account_info const &) = default;
-	account_info (paper::block_hash const &, paper::block_hash const &, paper::block_hash const &, paper::amount const &, uint64_t, uint64_t);
+	account_info (paper::block_hash const &, paper::block_hash const &, paper::block_hash const &, paper::assetKey const &, uint64_t, uint64_t);
 	void serialize (paper::stream &) const;
 	bool deserialize (paper::stream &);
 	bool operator== (paper::account_info const &) const;
@@ -114,7 +114,7 @@ public:
 	paper::block_hash head;
 	paper::block_hash rep_block;
 	paper::block_hash open_block;
-	paper::amount balance;
+	paper::assetKey assetKey;
 	/** Seconds since posix epoch */
 	uint64_t modified;
 	uint64_t block_count;
@@ -128,13 +128,13 @@ class pending_info
 public:
 	pending_info ();
 	pending_info (MDB_val const &);
-	pending_info (paper::account const &, paper::amount const &);
+	pending_info (paper::account const &, paper::assetKey const &);
 	void serialize (paper::stream &) const;
 	bool deserialize (paper::stream &);
 	bool operator== (paper::pending_info const &) const;
 	paper::mdb_val val () const;
 	paper::account source;
-	paper::amount amount;
+	paper::assetKey amount;
 };
 class pending_key
 {
@@ -153,13 +153,13 @@ class block_info
 public:
 	block_info ();
 	block_info (MDB_val const &);
-	block_info (paper::account const &, paper::amount const &);
+	block_info (paper::account const &, paper::assetKey const &);
 	void serialize (paper::stream &) const;
 	bool deserialize (paper::stream &);
 	bool operator== (paper::block_info const &) const;
 	paper::mdb_val val () const;
 	paper::account account;
-	paper::amount balance;
+	paper::assetKey assetKey;
 };
 class block_counts
 {
@@ -226,7 +226,7 @@ class process_return
 public:
 	paper::process_result code;
 	paper::account account;
-	paper::amount amount;
+	paper::assetKey amount;
 	paper::account pending_account;
 };
 enum class tally_result

@@ -1204,10 +1204,10 @@ void paper::block_processor::process_receive_many (std::deque<paper::block_proce
 			node.observers.blocks (i.first, i.second.account, i.second.amount);
 			if (i.second.amount > 0)
 			{
-				node.observers.account_balance (i.second.account, false);
+				node.observers.account_assetKey (i.second.account, false);
 				if (!i.second.pending_account.is_zero ())
 				{
-					node.observers.account_balance (i.second.pending_account, true);
+					node.observers.account_assetKey (i.second.pending_account, true);
 				}
 			}
 		}
@@ -1375,14 +1375,14 @@ block_processor_thread ([this]() { this->block_processor.process_blocks (); })
 	peers.disconnect_observer = [this]() {
 		observers.disconnect ();
 	};
-	observers.blocks.add ([this](std::shared_ptr<paper::block> block_a, paper::account const & account_a, paper::amount const & amount_a) {
+	observers.blocks.add ([this](std::shared_ptr<paper::block> block_a, paper::account const & account_a, paper::assetKey const & amount_a) {
 		if (this->block_arrival.recent (block_a->hash ()))
 		{
 			paper::transaction transaction (store.environment, nullptr, true);
 			active.start (transaction, block_a);
 		}
 	});
-	observers.blocks.add ([this](std::shared_ptr<paper::block> block_a, paper::account const & account_a, paper::amount const & amount_a) {
+	observers.blocks.add ([this](std::shared_ptr<paper::block> block_a, paper::account const & account_a, paper::assetKey const & amount_a) {
 		if (this->block_arrival.recent (block_a->hash ()))
 		{
 			auto node_l (shared_from_this ());
@@ -1539,11 +1539,13 @@ block_processor_thread ([this]() { this->block_processor.process_blocks (); })
 					{
 						break;
 					}
-					paper::amount weight;
+					paper::assetKey weight;
 					if (paper::read (weight_stream, weight.bytes))
 					{
 						break;
 					}
+
+					//to do
 					BOOST_LOG (log) << "Using bootstrap rep weight: " << account.to_account () << " -> " << weight.format_balance (Mppr_ratio, 0, true) << " ppr";
 					ledger.bootstrap_weights[account] = weight.number ();
 				}
@@ -1874,10 +1876,10 @@ paper::block_hash paper::node::latest (paper::account const & account_a)
 	return ledger.latest (transaction, account_a);
 }
 
-paper::uint128_t paper::node::balance (paper::account const & account_a)
+paper::uint128_t paper::node::assetKey (paper::account const & account_a)
 {
 	paper::transaction transaction (store.environment, nullptr, false);
-	return ledger.account_balance (transaction, account_a);
+	return ledger.account_assetKey (transaction, account_a);
 }
 
 std::unique_ptr<paper::block> paper::node::block (paper::block_hash const & hash_a)
@@ -1886,12 +1888,12 @@ std::unique_ptr<paper::block> paper::node::block (paper::block_hash const & hash
 	return store.block_get (transaction, hash_a);
 }
 
-std::pair<paper::uint128_t, paper::uint128_t> paper::node::balance_pending (paper::account const & account_a)
+std::pair<paper::uint128_t, paper::uint128_t> paper::node::assetKey_pending (paper::account const & account_a)
 {
 	std::pair<paper::uint128_t, paper::uint128_t> result;
 	paper::transaction transaction (store.environment, nullptr, false);
-	result.first = ledger.account_balance (transaction, account_a);
-	result.second = ledger.account_pending (transaction, account_a);
+	result.first = ledger.account_assetKey (transaction, account_a);
+	result.second = ledger.account_assetKey (transaction, account_a);
 	return result;
 }
 
@@ -1999,16 +2001,17 @@ void paper::node::backup_wallet ()
 	});
 }
 
-int paper::node::price (paper::uint128_t const & balance_a, int amount_a)
+//to do : need to figure out the logic here
+int paper::node::price (paper::uint128_t const & assetKey_a, int amount_a)
 {
-	assert (balance_a >= amount_a * paper::Gppr_ratio);
-	auto balance_l (balance_a);
+	assert (assetKey_a >= amount_a * paper::Gppr_ratio);
+	auto assetKey_l (assetKey_a);
 	double result (0.0);
 	for (auto i (0); i < amount_a; ++i)
 	{
-		balance_l -= paper::Gppr_ratio;
-		auto balance_scaled ((balance_l / paper::Mppr_ratio).convert_to<double> ());
-		auto units (balance_scaled / 1000.0);
+		assetKey_l -= paper::Gppr_ratio;
+		auto assetKey_scaled ((assetKey_l / paper::Mppr_ratio).convert_to<double> ());
+		auto units (assetKey_scaled / 1000.0);
 		auto unit_price (((free_cutoff - units) / free_cutoff) * price_max);
 		result += std::min (std::max (0.0, unit_price), price_max);
 	}
@@ -2476,7 +2479,7 @@ bool paper::peer_container::not_a_peer (paper::endpoint const & endpoint_a)
 	return result;
 }
 
-bool paper::peer_container::rep_response (paper::endpoint const & endpoint_a, paper::amount const & weight_a)
+bool paper::peer_container::rep_response (paper::endpoint const & endpoint_a, paper::assetKey const & weight_a)
 {
 	auto updated (false);
 	std::lock_guard<std::mutex> lock (mutex);

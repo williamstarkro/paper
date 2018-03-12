@@ -413,10 +413,10 @@ public:
 class node_observers
 {
 public:
-	paper::observer_set<std::shared_ptr<paper::block>, paper::account const &, paper::amount const &> blocks;
+	paper::observer_set<std::shared_ptr<paper::block>, paper::account const &, paper::assetKey const &> blocks;
 	paper::observer_set<bool> wallet;
 	paper::observer_set<std::shared_ptr<paper::vote>, paper::endpoint const &> vote;
-	paper::observer_set<paper::account const &, bool> account_balance;
+	paper::observer_set<paper::account const &, bool> account_assetKey;
 	paper::observer_set<paper::endpoint const &> endpoint;
 	paper::observer_set<> disconnect;
 	paper::observer_set<> started;
@@ -493,9 +493,9 @@ public:
 	paper::process_return process (paper::block const &);
 	void keepalive_preconfigured (std::vector<std::string> const &);
 	paper::block_hash latest (paper::account const &);
-	paper::uint128_t balance (paper::account const &);
+	paper::uint128_t assetKey (paper::account const &);
 	std::unique_ptr<paper::block> block (paper::block_hash const &);
-	std::pair<paper::uint128_t, paper::uint128_t> balance_pending (paper::account const &);
+	std::pair<paper::uint128_t, paper::uint128_t> assetKey_pending (paper::account const &);
 	paper::uint128_t weight (paper::account const &);
 	paper::account representative (paper::account const &);
 	void ongoing_keepalive ();

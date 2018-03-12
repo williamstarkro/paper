@@ -176,7 +176,7 @@ int main (int argc, char * const * argv)
 					          << "Public: " << rep.pub.to_string () << std::endl
 					          << "Account: " << rep.pub.to_account () << std::endl;
 				}
-				paper::uint128_t balance (std::numeric_limits<paper::uint128_t>::max ());
+				paper::uint128_t assetKey (std::numeric_limits<paper::uint128_t>::max ());
 				paper::open_block genesis_block (genesis.pub, genesis.pub, genesis.pub, genesis.prv, genesis.pub, work.generate (genesis.pub));
 				std::cout << genesis_block.to_json ();
 				paper::block_hash previous (genesis_block.hash ());
@@ -186,9 +186,9 @@ int main (int argc, char * const * argv)
 					auto weekly_distribution (yearly_distribution / 52);
 					for (auto j (0); j != 52; ++j)
 					{
-						assert (balance > weekly_distribution);
-						balance = balance < (weekly_distribution * 2) ? 0 : balance - weekly_distribution;
-						paper::send_block send (previous, landing.pub, balance, genesis.prv, genesis.pub, work.generate (previous));
+						assert (assetKey > weekly_distribution);
+						assetKey = assetKey < (weekly_distribution * 2) ? 0 : assetKey - weekly_distribution;
+						paper::send_block send (previous, landing.pub, assetKey, genesis.prv, genesis.pub, work.generate (previous));
 						previous = send.hash ();
 						std::cout << send.to_json ();
 						std::cout.flush ();
@@ -226,7 +226,9 @@ int main (int argc, char * const * argv)
 			paper::account_info info (i->second);
 			paper::block_hash rep_block (node.node->ledger.representative_calculated (transaction, info.head));
 			std::unique_ptr<paper::block> block (node.node->store.block_get (transaction, rep_block));
-			calculated[block->representative ()] += info.balance.number ();
+			calculated[block->representative ()] += info.assetKey.number ();
+
+			//to do verify previous logic
 		}
 		total = 0;
 		for (auto i (calculated.begin ()), n (calculated.end ()); i != n; ++i)
@@ -398,23 +400,24 @@ int main (int argc, char * const * argv)
 		auto end (std::chrono::high_resolution_clock::now ());
 		std::cerr << "Signature verifications " << std::chrono::duration_cast<std::chrono::microseconds> (end - begin).count () << std::endl;
 	}
-	else if (vm.count ("debug_profile_sign"))
-	{
-		std::cerr << "Starting blocks signing profiling\n";
-		for (uint64_t i (0); true; ++i)
-		{
-			paper::keypair key;
-			paper::block_hash latest (0);
-			auto begin1 (std::chrono::high_resolution_clock::now ());
-			for (uint64_t balance (0); balance < 1000; ++balance)
-			{
-				paper::send_block send (latest, key.pub, balance, key.prv, key.pub, 0);
-				latest = send.hash ();
-			}
-			auto end1 (std::chrono::high_resolution_clock::now ());
-			std::cerr << boost::str (boost::format ("%|1$ 12d|\n") % std::chrono::duration_cast<std::chrono::microseconds> (end1 - begin1).count ());
-		}
-	}
+	//to do- comment out for now
+	// else if (vm.count ("debug_profile_sign"))
+	// {
+	// 	std::cerr << "Starting blocks signing profiling\n";
+	// 	for (uint64_t i (0); true; ++i)
+	// 	{
+	// 		paper::keypair key;
+	// 		paper::block_hash latest (0);
+	// 		auto begin1 (std::chrono::high_resolution_clock::now ());
+	// 		for (uint64_t balance (0); balance < 1000; ++balance)
+	// 		{
+	// 			paper::send_block send (latest, key.pub, balance, key.prv, key.pub, 0);
+	// 			latest = send.hash ();
+	// 		}
+	// 		auto end1 (std::chrono::high_resolution_clock::now ());
+	// 		std::cerr << boost::str (boost::format ("%|1$ 12d|\n") % std::chrono::duration_cast<std::chrono::microseconds> (end1 - begin1).count ());
+	// 	}
+	// }
 	else if (vm.count ("version"))
 	{
 		std::cout << "Version " << PAPER_VERSION_MAJOR << "." << PAPER_VERSION_MINOR << std::endl;

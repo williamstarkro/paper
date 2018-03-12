@@ -918,7 +918,7 @@ void paper_qt::wallet::start ()
 		{
 			show_line_ok (*this_l->send_count);
 			show_line_ok (*this_l->send_account);
-			paper::amount amount;
+			paper::assetKey amount;
 			if (!amount.decode_dec (this_l->send_count->text ().toStdString ()))
 			{
 				paper::uint128_t actual (amount.number () * this_l->rendering_ratio);
@@ -1076,7 +1076,7 @@ void paper_qt::wallet::start ()
 			this_l->push_main_stack (this_l->send_blocks_window);
 		}
 	});
-	node.observers.blocks.add ([this_w](std::shared_ptr<paper::block> block_a, paper::account const & account_a, paper::amount const &) {
+	node.observers.blocks.add ([this_w](std::shared_ptr<paper::block> block_a, paper::account const & account_a, paper::assetKey const &) {
 		if (auto this_l = this_w.lock ())
 		{
 			this_l->application.postEvent (&this_l->processor, new eventloop_event ([this_w, block_a, account_a]() {
@@ -1241,7 +1241,7 @@ void paper_qt::wallet::change_rendering_ratio (paper::uint128_t const & renderin
 
 std::string paper_qt::wallet::format_balance (paper::uint128_t const & balance) const
 {
-	auto balance_str = paper::amount (balance).format_balance (rendering_ratio, 0, false);
+	auto balance_str = paper::assetKey (balance).format_balance (rendering_ratio, 0, false);
 	auto unit = std::string ("XRB");
 	if (rendering_ratio == paper::kxrb_ratio)
 	{

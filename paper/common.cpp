@@ -171,7 +171,7 @@ paper::account_info::account_info () :
 head (0),
 rep_block (0),
 open_block (0),
-balance (0),
+assetKey (0),
 modified (0),
 block_count (0)
 {
@@ -180,15 +180,15 @@ block_count (0)
 paper::account_info::account_info (MDB_val const & val_a)
 {
 	assert (val_a.mv_size == sizeof (*this));
-	static_assert (sizeof (head) + sizeof (rep_block) + sizeof (open_block) + sizeof (balance) + sizeof (modified) + sizeof (block_count) == sizeof (*this), "Class not packed");
+	static_assert (sizeof (head) + sizeof (rep_block) + sizeof (open_block) + sizeof (assetKey) + sizeof (modified) + sizeof (block_count) == sizeof (*this), "Class not packed");
 	std::copy (reinterpret_cast<uint8_t const *> (val_a.mv_data), reinterpret_cast<uint8_t const *> (val_a.mv_data) + sizeof (*this), reinterpret_cast<uint8_t *> (this));
 }
 
-paper::account_info::account_info (paper::block_hash const & head_a, paper::block_hash const & rep_block_a, paper::block_hash const & open_block_a, paper::amount const & balance_a, uint64_t modified_a, uint64_t block_count_a) :
+paper::account_info::account_info (paper::block_hash const & head_a, paper::block_hash const & rep_block_a, paper::block_hash const & open_block_a, paper::assetKey const & assetKey_a, uint64_t modified_a, uint64_t block_count_a) :
 head (head_a),
 rep_block (rep_block_a),
 open_block (open_block_a),
-balance (balance_a),
+assetKey (assetKey_a),
 modified (modified_a),
 block_count (block_count_a)
 {
@@ -199,7 +199,7 @@ void paper::account_info::serialize (paper::stream & stream_a) const
 	write (stream_a, head.bytes);
 	write (stream_a, rep_block.bytes);
 	write (stream_a, open_block.bytes);
-	write (stream_a, balance.bytes);
+	write (stream_a, assetKey.bytes);
 	write (stream_a, modified);
 	write (stream_a, block_count);
 }
@@ -215,7 +215,7 @@ bool paper::account_info::deserialize (paper::stream & stream_a)
 			error = read (stream_a, open_block.bytes);
 			if (!error)
 			{
-				error = read (stream_a, balance.bytes);
+				error = read (stream_a, assetKey.bytes);
 				if (!error)
 				{
 					error = read (stream_a, modified);
@@ -232,7 +232,7 @@ bool paper::account_info::deserialize (paper::stream & stream_a)
 
 bool paper::account_info::operator== (paper::account_info const & other_a) const
 {
-	return head == other_a.head && rep_block == other_a.rep_block && open_block == other_a.open_block && balance == other_a.balance && modified == other_a.modified && block_count == other_a.block_count;
+	return head == other_a.head && rep_block == other_a.rep_block && open_block == other_a.open_block && assetKey == other_a.assetKey && modified == other_a.modified && block_count == other_a.block_count;
 }
 
 bool paper::account_info::operator!= (paper::account_info const & other_a) const
@@ -271,7 +271,7 @@ paper::pending_info::pending_info (MDB_val const & val_a)
 	std::copy (reinterpret_cast<uint8_t const *> (val_a.mv_data), reinterpret_cast<uint8_t const *> (val_a.mv_data) + sizeof (*this), reinterpret_cast<uint8_t *> (this));
 }
 
-paper::pending_info::pending_info (paper::account const & source_a, paper::amount const & amount_a) :
+paper::pending_info::pending_info (paper::account const & source_a, paper::assetKey const & amount_a) :
 source (source_a),
 amount (amount_a)
 {
@@ -344,27 +344,27 @@ paper::mdb_val paper::pending_key::val () const
 
 paper::block_info::block_info () :
 account (0),
-balance (0)
+assetKey (0)
 {
 }
 
 paper::block_info::block_info (MDB_val const & val_a)
 {
 	assert (val_a.mv_size == sizeof (*this));
-	static_assert (sizeof (account) + sizeof (balance) == sizeof (*this), "Packed class");
+	static_assert (sizeof (account) + sizeof (assetKey) == sizeof (*this), "Packed class");
 	std::copy (reinterpret_cast<uint8_t const *> (val_a.mv_data), reinterpret_cast<uint8_t const *> (val_a.mv_data) + sizeof (*this), reinterpret_cast<uint8_t *> (this));
 }
 
-paper::block_info::block_info (paper::account const & account_a, paper::amount const & balance_a) :
+paper::block_info::block_info (paper::account const & account_a, paper::assetKey const & assetKey_a) :
 account (account_a),
-balance (balance_a)
+assetKey (assetKey_a)
 {
 }
 
 void paper::block_info::serialize (paper::stream & stream_a) const
 {
 	paper::write (stream_a, account.bytes);
-	paper::write (stream_a, balance.bytes);
+	paper::write (stream_a, assetKey.bytes);
 }
 
 bool paper::block_info::deserialize (paper::stream & stream_a)
@@ -372,14 +372,14 @@ bool paper::block_info::deserialize (paper::stream & stream_a)
 	auto error (paper::read (stream_a, account.bytes));
 	if (!error)
 	{
-		error = paper::read (stream_a, balance.bytes);
+		error = paper::read (stream_a, assetKey.bytes);
 	}
 	return error;
 }
 
 bool paper::block_info::operator== (paper::block_info const & other_a) const
 {
-	return account == other_a.account && balance == other_a.balance;
+	return account == other_a.account && assetKey == other_a.assetKey;
 }
 
 paper::mdb_val paper::block_info::val () const
@@ -417,9 +417,10 @@ store (store_a)
 
 void paper::amount_visitor::send_block (paper::send_block const & block_a)
 {
-	balance_visitor prev (transaction, store);
+	assetKey_visitor prev (transaction, store);
 	prev.compute (block_a.hashables.previous);
-	result = prev.result - block_a.hashables.balance.number ();
+	//result = prev.result - block_a.hashables.balance.number ();
+	result = block_a.hashables.assetKey.number;
 }
 
 void paper::amount_visitor::receive_block (paper::receive_block const & block_a)
@@ -472,7 +473,7 @@ void paper::amount_visitor::compute (paper::block_hash const & block_hash)
 	}
 }
 
-paper::balance_visitor::balance_visitor (MDB_txn * transaction_a, paper::block_store & store_a) :
+paper::assetKey_visitor::assetKey_visitor (MDB_txn * transaction_a, paper::block_store & store_a) :
 transaction (transaction_a),
 store (store_a),
 current (0),
@@ -480,43 +481,45 @@ result (0)
 {
 }
 
-void paper::balance_visitor::send_block (paper::send_block const & block_a)
+void paper::assetKey_visitor::send_block (paper::send_block const & block_a)
 {
-	result += block_a.hashables.balance.number ();
+	result = block_a.hashables.assetKey.number ();
 	current = 0;
 }
 
-void paper::balance_visitor::receive_block (paper::receive_block const & block_a)
+void paper::assetKey_visitor::receive_block (paper::receive_block const & block_a)
 {
+	//todo - check if amount visitor is necessary
 	amount_visitor source (transaction, store);
 	source.compute (block_a.hashables.source);
 	paper::block_info block_info;
 	if (!store.block_info_get (transaction, block_a.hash (), block_info))
 	{
-		result += block_info.balance.number ();
+		result = block_info.assetKey.number ();
 		current = 0;
 	}
 	else
 	{
-		result += source.result;
+		result = source.result;
 		current = block_a.hashables.previous;
 	}
 }
 
-void paper::balance_visitor::open_block (paper::open_block const & block_a)
+void paper::assetKey_visitor::open_block (paper::open_block const & block_a)
 {
+	//todo - check if amount visitor is necessary
 	amount_visitor source (transaction, store);
 	source.compute (block_a.hashables.source);
-	result += source.result;
+	result = source.result;
 	current = 0;
 }
 
-void paper::balance_visitor::change_block (paper::change_block const & block_a)
+void paper::assetKey_visitor::change_block (paper::change_block const & block_a)
 {
 	paper::block_info block_info;
 	if (!store.block_info_get (transaction, block_a.hash (), block_info))
 	{
-		result += block_info.balance.number ();
+		result = block_info.assetKey.number ();
 		current = 0;
 	}
 	else
@@ -525,7 +528,7 @@ void paper::balance_visitor::change_block (paper::change_block const & block_a)
 	}
 }
 
-void paper::balance_visitor::compute (paper::block_hash const & block_hash)
+void paper::assetKey_visitor::compute (paper::block_hash const & block_hash)
 {
 	current = block_hash;
 	while (!current.is_zero ())
