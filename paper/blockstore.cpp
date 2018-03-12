@@ -524,9 +524,9 @@ void paper::block_store::clear (MDB_dbi db_a)
 	assert (status == 0);
 }
 
-paper::uint128_t paper::block_store::block_balance (MDB_txn * transaction_a, paper::block_hash const & hash_a)
+paper::uint128_t paper::block_store::block_assetKey (MDB_txn * transaction_a, paper::block_hash const & hash_a)
 {
-	balance_visitor visitor (transaction_a, *this);
+	assetKey_visitor visitor (transaction_a, *this);
 	visitor.compute (hash_a);
 	return visitor.result;
 }
