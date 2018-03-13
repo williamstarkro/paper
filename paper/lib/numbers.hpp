@@ -50,6 +50,7 @@ public:
 };
 // Balances are 128 bit.
 using amount = uint128_union;
+using assetKey = uint128_union;
 class raw_key;
 union uint256_union
 {
@@ -89,7 +90,6 @@ using public_key = uint256_union;
 using private_key = uint256_union;
 using secret_key = uint256_union;
 using checksum = uint256_union;
-using assetKey = uint256_union;
 class raw_key
 {
 public:

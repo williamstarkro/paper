@@ -184,7 +184,7 @@ paper::account_info::account_info (MDB_val const & val_a)
 	std::copy (reinterpret_cast<uint8_t const *> (val_a.mv_data), reinterpret_cast<uint8_t const *> (val_a.mv_data) + sizeof (*this), reinterpret_cast<uint8_t *> (this));
 }
 
-paper::account_info::account_info (paper::block_hash const & head_a, paper::block_hash const & rep_block_a, paper::block_hash const & open_block_a, paper::assetKey const & assetKey_a, uint64_t modified_a, uint64_t block_count_a) :
+paper::account_info::account_info (paper::block_hash const & head_a, paper::block_hash const & rep_block_a, paper::block_hash const & open_block_a, paper::amount const & assetKey_a, uint64_t modified_a, uint64_t block_count_a) :
 head (head_a),
 rep_block (rep_block_a),
 open_block (open_block_a),
@@ -271,7 +271,7 @@ paper::pending_info::pending_info (MDB_val const & val_a)
 	std::copy (reinterpret_cast<uint8_t const *> (val_a.mv_data), reinterpret_cast<uint8_t const *> (val_a.mv_data) + sizeof (*this), reinterpret_cast<uint8_t *> (this));
 }
 
-paper::pending_info::pending_info (paper::account const & source_a, paper::assetKey const & amount_a) :
+paper::pending_info::pending_info (paper::account const & source_a, paper::amount const & amount_a) :
 source (source_a),
 amount (amount_a)
 {
@@ -355,7 +355,7 @@ paper::block_info::block_info (MDB_val const & val_a)
 	std::copy (reinterpret_cast<uint8_t const *> (val_a.mv_data), reinterpret_cast<uint8_t const *> (val_a.mv_data) + sizeof (*this), reinterpret_cast<uint8_t *> (this));
 }
 
-paper::block_info::block_info (paper::account const & account_a, paper::assetKey const & assetKey_a) :
+paper::block_info::block_info (paper::account const & account_a, paper::amount const & assetKey_a) :
 account (account_a),
 assetKey (assetKey_a)
 {
@@ -696,7 +696,7 @@ void paper::genesis::initialize (MDB_txn * transaction_a, paper::block_store & s
 	auto hash_l (hash ());
 	assert (store_a.latest_begin (transaction_a) == store_a.latest_end ());
 	store_a.block_put (transaction_a, hash_l, *open);
-	store_a.account_put (transaction_a, genesis_account, { hash_l, open->hash (), open->hash (), std::numeric_limits<paper::uint256_t>::max (), paper::seconds_since_epoch (), 1 });
+	store_a.account_put (transaction_a, genesis_account, { hash_l, open->hash (), open->hash (), std::numeric_limits<paper::uint128_t>::max (), paper::seconds_since_epoch (), 1 });
 	store_a.representation_put (transaction_a, genesis_account, std::numeric_limits<paper::uint128_t>::max ());
 	store_a.checksum_put (transaction_a, 0, 0, hash_l);
 	store_a.frontier_put (transaction_a, hash_l, genesis_account);

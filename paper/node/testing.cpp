@@ -221,7 +221,7 @@ paper::account paper::system::get_random_account (std::vector<paper::account> & 
 
 paper::uint128_t paper::system::get_random_amount (MDB_txn * transaction_a, paper::node & node_a, paper::account const & account_a)
 {
-	paper::uint128_t balance (node_a.ledger.account_balance (transaction_a, account_a));
+	paper::uint128_t balance (node_a.ledger.account_assetKey (transaction_a, account_a));
 	std::string balance_text (balance.convert_to<std::string> ());
 	paper::uint128_union random_amount;
 	random_pool.GenerateBlock (random_amount.bytes.data (), sizeof (random_amount.bytes));

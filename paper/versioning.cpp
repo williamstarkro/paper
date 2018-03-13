@@ -3,7 +3,7 @@
 paper::account_info_v1::account_info_v1 () :
 head (0),
 rep_block (0),
-balance (0),
+assetKey (0),
 modified (0)
 {
 }

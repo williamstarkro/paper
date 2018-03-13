@@ -899,7 +899,7 @@ void paper::rpc_handler::available_supply ()
 	auto burned_assetKey ((node.assetKey_pending (paper::account (0))).second); // Burning 0 account
 
 	//to do: this logic wont work
-	auto available (paper::genesis_amount - genesis_assetKey - landing_bassetKey - faucet_assetKey - burned_assetKey);
+	auto available (paper::genesis_amount - genesis_assetKey - landing_assetKey - faucet_assetKey - burned_assetKey);
 	boost::property_tree::ptree response_l;
 	response_l.put ("available", available.convert_to<std::string> ());
 	response (response_l);
